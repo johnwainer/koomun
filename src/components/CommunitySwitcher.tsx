@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 
 export type MyCommunity = {
   id: string;
@@ -112,9 +113,11 @@ export default function CommunitySwitcher({ maxWidth = "max-w-7xl", activeId, on
             </button>
           ))}
           
-          <button className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-dashed border-outline-variant/50 text-outline-variant hover:text-primary hover:border-primary/50 hover:bg-surface-container-low transition-colors shrink-0 mx-2">
-            <span className="material-symbols-outlined">add</span>
-          </button>
+          <Link href="/">
+             <button className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-dashed border-outline-variant/50 text-outline-variant hover:text-primary hover:border-primary/50 hover:bg-surface-container-low transition-colors shrink-0 mx-2">
+               <span className="material-symbols-outlined">add</span>
+             </button>
+          </Link>
         </div>
       </div>
     </section>

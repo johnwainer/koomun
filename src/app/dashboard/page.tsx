@@ -11,28 +11,32 @@ import { useEffect, useState } from "react";
 export default function MyCommunitiesPage() {
   const router = useRouter();
   const [myCommunities, setMyCommunities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [authStatus, setAuthStatus] = useState<"pending" | "success" | "unauthorized" | "empty">("pending");
 
   useEffect(() => {
     async function loadComms() {
        try {
            const res = await fetch("/api/private/my-communities");
            if (res.status === 401) {
-              router.push('/login');
+              setAuthStatus("unauthorized");
               return;
            }
            if (res.ok) {
               const data = await res.json();
-              setMyCommunities(data.communities || []);
+              if (data.communities && data.communities.length > 0) {
+                 setMyCommunities(data.communities);
+                 setAuthStatus("success");
+              } else {
+                 setAuthStatus("empty");
+              }
            }
        } catch (e) {
            console.error(e);
-       } finally {
-           setLoading(false);
+           setAuthStatus("empty");
        }
     }
     loadComms();
-  }, [router]);
+  }, []);
 
   return (
     <>
@@ -59,11 +63,24 @@ export default function MyCommunitiesPage() {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {loading ? (
+            {authStatus === "pending" ? (
                <div className="col-span-full min-h-[300px] flex items-center justify-center">
                   <span className="material-symbols-outlined animate-spin text-primary text-4xl">refresh</span>
                </div>
-            ) : myCommunities.length === 0 ? (
+            ) : authStatus === "unauthorized" ? (
+               <div className="col-span-full text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
+                  <span className="material-symbols-outlined text-4xl text-outline-variant mb-4 flex justify-center text-amber-500">lock</span>
+                  <p className="text-on-surface-variant font-medium mb-4">Debes iniciar sesión para ver tus comunidades.</p>
+                  <div className="flex gap-4 justify-center">
+                     <Link href="/login">
+                       <button className="px-6 py-2 bg-primary text-white rounded-full font-bold">Iniciar Sesión</button>
+                     </Link>
+                     <Link href="/register">
+                       <button className="px-6 py-2 bg-surface-container-high text-on-surface rounded-full font-bold border border-outline-variant/20">Registrarme</button>
+                     </Link>
+                  </div>
+               </div>
+            ) : authStatus === "empty" ? (
                <div className="col-span-full text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
                   <span className="material-symbols-outlined text-4xl text-outline-variant mb-4">group_off</span>
                   <p className="text-on-surface-variant font-medium mb-4">Aún no eres miembro de ninguna comunidad.</p>

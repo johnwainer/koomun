@@ -25,13 +25,18 @@ export async function POST(req: Request) {
        const { data: communities } = await supabaseAdmin.from('communities').select('id, creator_id').limit(5);
        if (!communities || communities.length === 0) return NextResponse.json({ error: "No communities available" }, { status: 400 });
 
+       const pad = (n: number) => n.toString().padStart(2, '0');
+       const now = new Date();
+       const mockDate1 = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-15`;
+       const mockDate2 = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-25`;
+
        const toInsert = communities.map((c, i) => ({
          community_id: c.id,
          creator_id: c.creator_id,
          title: `Evento de Prueba #${i+1}`,
          description: 'Este es un evento de prueba auto-generado',
-         type: 'Virtual (Zoom)',
-         event_date: '2026-05-10',
+         type: i % 2 === 0 ? 'Virtual (Zoom)' : 'Presencial',
+         event_date: i % 2 === 0 ? mockDate1 : mockDate2,
          event_time: '19:00',
          location_or_link: 'https://zoom.us',
          visibility: 'Público'
