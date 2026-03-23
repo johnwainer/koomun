@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     let query = supabaseClient
       .from('feed_posts')
-      .select('id, content, likes_count, created_at, community_id, author:profiles(id, full_name, avatar_url), comments:feed_comments(count)')
+      .select('id, content, media_url, likes_count, created_at, community_id, author:profiles(id, full_name, avatar_url), comments:feed_comments(count)')
       .order('created_at', { ascending: false });
 
     if (communityId) {
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     if (authError || !user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     
     const body = await req.json();
-    const { communityId, content } = body;
+    const { communityId, content, type } = body;
     
     if (!communityId || !content) {
        return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
@@ -68,6 +68,7 @@ export async function POST(req: Request) {
     const { data, error } = await supabaseClient.from('feed_posts').insert({
        community_id: communityId,
        author_id: user.id,
+       media_url: type || 'General',
        content
     }).select('id').single();
 

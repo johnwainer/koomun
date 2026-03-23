@@ -31,7 +31,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [accessState, setAccessState] = useState<"pending" | "success" | "unauthorized" | "empty">("pending");
   const [newPostContent, setNewPostContent] = useState("");
+  const [newPostType, setNewPostType] = useState("General");
   const [isPosting, setIsPosting] = useState(false);
+  const [myAvatar, setMyAvatar] = useState("");
 
   useEffect(() => {
     async function loadFeed() {
@@ -39,6 +41,11 @@ export default function DashboardPage() {
       setLoading(true);
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user?.user_metadata?.avatar_url) {
+           setMyAvatar(session.user.user_metadata.avatar_url);
+        } else if (session?.user?.id) {
+           setMyAvatar(`https://i.pravatar.cc/150?u=${session.user.id}`);
+        }
         const res = await fetch(`/api/private/feed?communityId=${activeCommunity.id}`, {
            headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
         });
@@ -67,13 +74,11 @@ export default function DashboardPage() {
       const res = await fetch(`/api/private/feed`, {
          method: 'POST',
          headers: session ? { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` } : { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ communityId: activeCommunity.id, content: newPostContent })
+         body: JSON.stringify({ communityId: activeCommunity.id, content: newPostContent, type: newPostType })
       });
       if (res.ok) {
-         const { post } = await res.json();
-         // Optimistic UI, but missing profile so let's just refetch 
-         // Real way would be passing full profile from api but we can fast refetch.
          setNewPostContent("");
+         setNewPostType("General");
       }
     } catch(err) {
        console.error(err);
@@ -106,7 +111,7 @@ export default function DashboardPage() {
   // Placeholder filters implementation since we don't have types on the db model yet
   const filteredPosts = activeFilter === "Todos" 
     ? posts 
-    : [];
+    : posts.filter(p => p.media_url === activeFilter);
 
   return (
     <>
@@ -155,31 +160,38 @@ export default function DashboardPage() {
             </header>
 
             {/* Input Post Area */}
-            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10">
-              <div className="flex gap-4 items-center">
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10 flex flex-col gap-4">
+              <div className="flex gap-4 items-start">
                 <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
-                  <img alt="Me" src="https://i.pravatar.cc/150?u=current_user" />
+                  <img alt="Me" src={myAvatar || "https://i.pravatar.cc/150?u=current_user"} className="w-full h-full object-cover" />
                 </div>
-                <div className="flex-1">
-                  <input 
-                    type="text" 
+                <div className="flex-1 flex flex-col gap-3">
+                  <textarea 
                     value={newPostContent}
                     onChange={(e) => setNewPostContent(e.target.value)}
-                    onKeyDown={(e) => {
-                       if (e.key === 'Enter') handlePost();
-                    }}
                     disabled={isPosting}
                     placeholder={`Escribe algo a ${activeCommunity.name}${isPosting ? ' (Publicando...)' : '...'}`}
-                    className="w-full text-left px-5 py-3 bg-surface-container-low rounded-full text-on-surface hover:bg-surface-container-highest transition-colors text-sm font-medium outline-none border border-transparent focus:border-outline-variant/30 disabled:opacity-50"
+                    className="w-full text-left px-4 py-3 bg-surface-container-low rounded-lg text-on-surface transition-colors text-sm font-medium outline-none border border-transparent focus:border-outline-variant/30 disabled:opacity-50 min-h-[80px] resize-none"
                   />
-                </div>
-                <div className="flex gap-2">
-                  <button className="p-2 hover:bg-surface-container-low rounded-lg transition-colors text-on-surface-variant group">
-                    <span className="material-symbols-outlined group-hover:text-primary">image</span>
-                  </button>
-                  <button className="p-2 hover:bg-surface-container-low rounded-lg transition-colors text-on-surface-variant group">
-                    <span className="material-symbols-outlined group-hover:text-primary">videocam</span>
-                  </button>
+                  <div className="flex justify-between items-center">
+                    <select
+                      value={newPostType}
+                      onChange={(e) => setNewPostType(e.target.value)}
+                      className="bg-surface-container hover:bg-surface-container-highest cursor-pointer text-xs font-bold text-on-surface-variant px-3 py-1.5 rounded-full outline-none"
+                    >
+                      <option value="General">General</option>
+                      <option value="Preguntas">Preguntas</option>
+                      <option value="Recursos">Recursos</option>
+                      <option value="Showcase">Showcase</option>
+                    </select>
+                    <button 
+                      onClick={handlePost}
+                      disabled={isPosting || !newPostContent.trim()}
+                      className="bg-on-surface text-surface px-5 py-1.5 rounded-full text-sm font-bold shadow disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-800 transition-colors"
+                    >
+                      {isPosting ? 'Publicando...' : 'Publicar'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -277,7 +289,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-[#faf9f7] p-4 rounded-xl flex flex-col items-center justify-center text-center border border-outline-variant/10 shadow-inner">
                   <div className="text-2xl font-black text-on-surface">
-                    {activeCommunity.id === 'c1' ? '12.4k' : activeCommunity.id === 'c2' ? '8.9k' : activeCommunity.id === 'c3' ? '15k' : '5k'}
+                    {activeCommunity.memberCount || 5}
                   </div>
                   <div className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mt-1">
                     Miembros
@@ -285,7 +297,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="bg-[#faf9f7] p-4 rounded-xl flex flex-col items-center justify-center text-center border border-outline-variant/10 shadow-inner">
                   <div className="text-2xl font-black text-green-600">
-                    {activeCommunity.id === 'c1' ? '842' : activeCommunity.id === 'c2' ? '320' : activeCommunity.id === 'c3' ? '1.2k' : '45'}
+                    {Math.max(1, Math.floor((activeCommunity.memberCount || 5) * 0.15))}
                   </div>
                   <div className="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mt-1 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Online

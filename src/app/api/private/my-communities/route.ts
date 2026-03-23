@@ -15,13 +15,13 @@ export async function GET(req: Request) {
     // Comunidades de las que el usuario es miembro
     const { data: memberOf } = await supabaseClient
       .from('members')
-      .select('community:communities(id, title, cover_image_url, creator:profiles(username, avatar_url, plan))')
+      .select('community:communities(id, title, cover_image_url, members:members(count), creator:profiles(username, avatar_url, plan))')
       .eq('user_id', session.user.id);
 
     // Comunidades creadas por el usuario
     const { data: ownerOf } = await supabaseClient
       .from('communities')
-      .select('id, title, cover_image_url, creator:profiles(username, avatar_url, plan)')
+      .select('id, title, cover_image_url, members:members(count), creator:profiles(username, avatar_url, plan)')
       .eq('creator_id', session.user.id);
 
     let list: any[] = [];
@@ -34,6 +34,7 @@ export async function GET(req: Request) {
           creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
           creatorUsername: c.creator?.username || `Creador-${c.id}`,
           isElite: c.creator?.plan?.toLowerCase() === 'elite',
+          memberCount: c.members?.[0]?.count || 0,
           unreads: 0,
           role: 'creator'
        }))];
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
                 creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
                 creatorUsername: c.creator?.username || `Creador-${c.id}`,
                 isElite: c.creator?.plan?.toLowerCase() === 'elite',
+                memberCount: c.members?.[0]?.count || 0,
                 unreads: Math.floor(Math.random() * 5), // Mock unreads
                 role: 'member'
              });

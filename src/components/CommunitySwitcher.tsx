@@ -9,6 +9,7 @@ export type MyCommunity = {
   name: string;
   image: string;
   unreads: number;
+  memberCount?: number;
 };
 
 // Fetch on mount

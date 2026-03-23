@@ -132,7 +132,7 @@ export default function CreatorProfilePage() {
                         <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Comunidades</span>
                      </div>
                      <div className="flex flex-col">
-                        <span className="text-2xl font-black text-on-surface">{(communities.length * 80) + 1}k</span>
+                        <span className="text-2xl font-black text-on-surface">{communities.reduce((acc, c) => acc + (c.members?.[0]?.count || 0), 0)}</span>
                         <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Influencia Global</span>
                      </div>
                   </div>
