@@ -63,10 +63,10 @@ export default function ChatPage() {
              <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
            </div>
         ) : authStatus === "unauthorized" ? (
-           <AccessMessage type="unauthorized" title="Debes iniciar sesión" description="Inicia sesión para hablar con miembros y creadores de otros ecosistemas." icon="chat_bubble" />
+           <AccessMessage type="unauthorized" title="Debes iniciar sesión" description="Inicia sesión para hablar con miembros y creadores de otras comunidades." icon="chat_bubble" />
         ) : contacts.length === 0 ? (
            <div className="flex-1 w-full flex items-center justify-center p-4">
-              <AccessMessage type="empty" title="Buzón de Mensajes Vacío" description="Aún no tienes conversaciones con otros usuarios. ¡Ve a explorar ecosistemas o creadores!" icon="chat" />
+              <AccessMessage type="empty" title="Buzón de Mensajes Vacío" description="Aún no tienes conversaciones con otros usuarios. ¡Ve a explorar comunidades o creadores!" icon="chat" />
            </div>
         ) : (
         <div className="flex-1 max-w-7xl mx-auto w-full flex bg-surface-container-lowest lg:rounded-2xl lg:shadow-sm overflow-hidden border-x border-b lg:border-t lg:my-6 border-outline-variant/10">

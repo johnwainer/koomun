@@ -52,7 +52,7 @@ export default function MyCommunitiesPage() {
               <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-on-surface mb-2">
                 Mis Comunidades
               </h1>
-              <p className="text-on-surface-variant text-sm font-medium">Todos los ecosistemas privados a los que perteneces.</p>
+              <p className="text-on-surface-variant text-sm font-medium">Todas las comunidades privadas a las que perteneces.</p>
             </div>
             
             <Link href="/">

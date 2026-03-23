@@ -6,7 +6,7 @@ import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
 
-type TabType = "ecosistemas" | "contenido" | "audiencia" | "finanzas" | "ajustes" | "landing" | "landing_creador" | "eventos";
+type TabType = "comunidades" | "contenido" | "audiencia" | "finanzas" | "ajustes" | "landing" | "landing_creador" | "eventos";
 
 export default function CreatorStudioPage() {
   const [activeTab, setActiveTab] = useState<TabType>("landing_creador");
@@ -230,7 +230,7 @@ export default function CreatorStudioPage() {
                 {[
                   { id: "landing_creador", label: "Perfil de Creador", icon: "badge" },
                   { id: "landing", label: "Landing Comunidad", icon: "web" },
-                  { id: "ecosistemas", label: "Tus Comunidades", icon: "apps" },
+                  { id: "comunidades", label: "Tus Comunidades", icon: "apps" },
                   { id: "contenido", label: "Contenido y Librería", icon: "video_library" },
                   { id: "eventos", label: "Eventos & Clases", icon: "calendar_month" },
                   { id: "audiencia", label: "Audiencia y Miembros", icon: "group" },
@@ -253,8 +253,8 @@ export default function CreatorStudioPage() {
              </div>
           </div>
 
-          {/* TAB 1: ECOSISTEMAS */}
-          {activeTab === "ecosistemas" && (
+          {/* TAB 1: COMUNIDADES */}
+          {activeTab === "comunidades" && (
              <div className="animate-in fade-in duration-500">
                {/* Quick Metrics */}
                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">

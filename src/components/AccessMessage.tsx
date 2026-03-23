@@ -21,7 +21,7 @@ export default function AccessMessage({ type, title, description, icon }: Access
     if (type === "empty") {
        return (
           <button onClick={() => router.push('/')} className="px-6 py-2 bg-on-surface text-surface font-bold rounded-full hover:scale-105 transition-transform shadow-md">
-            Explorar Ecosistemas
+            Explorar Comunidades
           </button>
        );
     }

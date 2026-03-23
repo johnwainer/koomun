@@ -88,7 +88,7 @@ export default function DashboardPage() {
            <AccessMessage 
               type="empty" 
               title="Tu feed está vacío" 
-              description="Aún no eres miembro de ninguna comunidad. Únete a ecosistemas increíbles para ver contenido exclusivo." 
+              description="Aún no eres miembro de ninguna comunidad. Únete a comunidades increíbles para ver contenido exclusivo." 
               icon="group_add" 
            />
         )}
