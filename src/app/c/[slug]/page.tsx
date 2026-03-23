@@ -138,10 +138,10 @@ export default function CommunityLandingPage() {
            {/* Avatar & Badges Header */}
            <div className="flex justify-between items-end -mt-12 md:-mt-16 mb-4">
               <div className="relative z-10 shrink-0">
-                 <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-[4px] md:border-[6px] bg-surface-container-highest shadow-xl overflow-hidden ${isPaid ? 'border-zinc-900' : 'border-surface'}`}>
+                 <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-[4px] md:border-[6px] bg-surface-container-highest shadow-xl overflow-hidden ${community.creator?.plan?.toLowerCase() === 'elite' ? 'border-zinc-900' : 'border-surface'}`}>
                     <img src={community.creator?.avatar_url || `https://i.pravatar.cc/150?u=${community.id}`} alt="Creator Avatar" className="w-full h-full object-cover" />
                  </div>
-                 {community.creator?.plan === 'Elite' && (
+                 {community.creator?.plan?.toLowerCase() === 'elite' && (
                     <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[8px] md:text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 md:px-3 md:py-1 rounded-full shadow-lg border-2 border-surface-container-lowest whitespace-nowrap z-20">
                        Elite
                     </div>
