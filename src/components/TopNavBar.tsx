@@ -13,6 +13,23 @@ export default function TopNavBar() {
   const [loading, setLoading] = useState(true);
 
   const handleLogout = async () => {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        await fetch("/api/private/logger", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            action: 'USER_LOGOUT',
+            entity_type: 'auth',
+            metadata: { method: 'TopNavBar' }
+          })
+        });
+      }
+    } catch(e) {}
     await supabaseClient.auth.signOut();
     window.location.href = '/login';
   };

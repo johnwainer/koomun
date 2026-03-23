@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseClient, supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
@@ -29,6 +29,15 @@ export async function POST(req: Request) {
     if (dbError) {
       return NextResponse.json({ error: dbError.message, context: "Profile Fetch failed" }, { status: 401 });
     }
+
+    // Insert Audit Log
+    await supabaseAdmin.from('audit_logs').insert({
+      actor_id: data.user.id,
+      action: 'USER_LOGIN',
+      entity_type: 'auth',
+      entity_id: data.user.id,
+      metadata: { email: data.user.email, role: profile?.role || 'user' }
+    });
 
     // Devuelve los tokens para que Web/Apps móviles la guarden (ej. SecureStore en iOS/Android)
     return NextResponse.json({ 

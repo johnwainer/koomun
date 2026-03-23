@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
      const { data: notifs, error } = await supabaseClient
         .from('notifications')
-        .select(`id, type, actor_id, action_text, target_text, is_read, created_at, actor:profiles!notifications_actor_id_fkey(first_name, last_name, avatar_url)`)
+        .select(`id, type, actor_id, action_text, target_text, is_read, created_at, actor:profiles!actor_id(first_name, last_name, avatar_url)`)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 

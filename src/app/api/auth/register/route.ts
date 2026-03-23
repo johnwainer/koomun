@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseClient, supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   try {
@@ -22,6 +22,16 @@ export async function POST(req: Request) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 401 });
+    }
+
+    if (data.user) {
+      await supabaseAdmin.from('audit_logs').insert({
+        actor_id: data.user.id,
+        action: 'USER_REGISTER',
+        entity_type: 'auth',
+        entity_id: data.user.id,
+        metadata: { email: data.user.email, full_name }
+      });
     }
 
     return NextResponse.json({ 
