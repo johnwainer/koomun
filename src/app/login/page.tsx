@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,7 +26,14 @@ export default function LoginPage() {
 
       if (!res.ok) throw new Error(data.error || "Login fallido");
       
-      // Store session if needed manually, or Supabase handles cookies automatically 
+      // Sincronizar la sesión que el servidor devolvió, directo al LocalStorage del cliente
+      if (data.session) {
+        await supabaseClient.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
       // Dependiendo del rol en base de datos retornado por nuestra API
       if (data.role === "super_admin" || data.role === "admin") {
         router.push("/admin");

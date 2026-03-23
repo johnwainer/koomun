@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,6 +26,13 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || "Fallo en el registro");
+
+      if (data.session) {
+        await supabaseClient.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
       
       router.push("/dashboard");
     } catch (err: any) {
