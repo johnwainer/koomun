@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
+import AccessMessage from "@/components/AccessMessage";
 
 import { useEffect, useState } from "react";
 
@@ -62,32 +63,15 @@ export default function MyCommunitiesPage() {
             </Link>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className={`gap-8 ${authStatus === "success" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "flex"}`}>
             {authStatus === "pending" ? (
-               <div className="col-span-full min-h-[300px] flex items-center justify-center">
+               <div className="w-full min-h-[300px] flex items-center justify-center">
                   <span className="material-symbols-outlined animate-spin text-primary text-4xl">refresh</span>
                </div>
             ) : authStatus === "unauthorized" ? (
-               <div className="col-span-full text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
-                  <span className="material-symbols-outlined text-4xl text-outline-variant mb-4 flex justify-center text-amber-500">lock</span>
-                  <p className="text-on-surface-variant font-medium mb-4">Debes iniciar sesión para ver tus comunidades.</p>
-                  <div className="flex gap-4 justify-center">
-                     <Link href="/login">
-                       <button className="px-6 py-2 bg-primary text-white rounded-full font-bold">Iniciar Sesión</button>
-                     </Link>
-                     <Link href="/register">
-                       <button className="px-6 py-2 bg-surface-container-high text-on-surface rounded-full font-bold border border-outline-variant/20">Registrarme</button>
-                     </Link>
-                  </div>
-               </div>
+               <AccessMessage type="unauthorized" title="Debes iniciar sesión" description="Debes iniciar sesión para ver tus comunidades inscritas." icon="lock" />
             ) : authStatus === "empty" ? (
-               <div className="col-span-full text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
-                  <span className="material-symbols-outlined text-4xl text-outline-variant mb-4">group_off</span>
-                  <p className="text-on-surface-variant font-medium mb-4">Aún no eres miembro de ninguna comunidad.</p>
-                  <Link href="/">
-                    <button className="px-6 py-2 bg-on-surface text-surface rounded-full font-bold">Explorar Ecosistemas</button>
-                  </Link>
-               </div>
+               <AccessMessage type="empty" title="Aún no tienes comunidades" description="Aún no eres miembro de ninguna comunidad." icon="group_off" />
             ) : (
             myCommunities.map((community) => (
               <div

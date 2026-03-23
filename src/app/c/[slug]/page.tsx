@@ -58,12 +58,19 @@ export default function CommunityLandingPage() {
 
   if (accessError) {
      return (
-       <AccessMessage 
-          type="private" 
-          title="Acceso Privado" 
-          description="Debes iniciar sesión y ser miembro activo para acceder al interior de esta comunidad." 
-          icon="lock" 
-       />
+       <>
+         <TopNavBar />
+         <SideNavBar />
+         <main className="lg:ml-64 pt-16 bg-surface min-h-screen flex flex-col">
+            <AccessMessage 
+               type="private" 
+               title="Acceso Privado" 
+               description="Debes iniciar sesión y ser miembro activo para acceder al interior de esta comunidad." 
+               icon="lock" 
+            />
+         </main>
+         <BottomNavBar />
+       </>
      );
   }
 
