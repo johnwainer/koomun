@@ -30,6 +30,8 @@ export default function DashboardPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [accessState, setAccessState] = useState<"pending" | "success" | "unauthorized" | "empty">("pending");
+  const [newPostContent, setNewPostContent] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
 
   useEffect(() => {
     async function loadFeed() {
@@ -56,6 +58,48 @@ export default function DashboardPage() {
     }
     loadFeed();
   }, [activeCommunity, accessState, router]);
+
+  const handlePost = async () => {
+    if (!activeCommunity || !newPostContent.trim()) return;
+    setIsPosting(true);
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const res = await fetch(`/api/private/feed`, {
+         method: 'POST',
+         headers: session ? { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` } : { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ communityId: activeCommunity.id, content: newPostContent })
+      });
+      if (res.ok) {
+         const { post } = await res.json();
+         // Optimistic UI, but missing profile so let's just refetch 
+         // Real way would be passing full profile from api but we can fast refetch.
+         setNewPostContent("");
+      }
+    } catch(err) {
+       console.error(err);
+    } finally {
+       setIsPosting(false);
+       // Hacky refetch
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       fetch(`/api/private/feed?communityId=${activeCommunity.id}`, { headers: session ? { Authorization: `Bearer ${session.access_token}` } : {} })
+         .then(r => r.json())
+         .then(d => setPosts(d.posts || []));
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    // Optimistic cache update
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count: (p.likes_count || 0) + 1 } : p));
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      await fetch(`/api/private/feed/${postId}/like`, {
+         method: 'POST',
+         headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+      });
+    } catch(err) {
+       console.error(err);
+    }
+  };
 
   const filters = ["Todos", "Preguntas", "Recursos", "Showcase"];
 
@@ -119,8 +163,14 @@ export default function DashboardPage() {
                 <div className="flex-1">
                   <input 
                     type="text" 
-                    placeholder={`Escribe algo a ${activeCommunity.name}...`}
-                    className="w-full text-left px-5 py-3 bg-surface-container-low rounded-full text-on-surface hover:bg-surface-container-highest transition-colors text-sm font-medium outline-none border border-transparent focus:border-outline-variant/30"
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    onKeyDown={(e) => {
+                       if (e.key === 'Enter') handlePost();
+                    }}
+                    disabled={isPosting}
+                    placeholder={`Escribe algo a ${activeCommunity.name}${isPosting ? ' (Publicando...)' : '...'}`}
+                    className="w-full text-left px-5 py-3 bg-surface-container-low rounded-full text-on-surface hover:bg-surface-container-highest transition-colors text-sm font-medium outline-none border border-transparent focus:border-outline-variant/30 disabled:opacity-50"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -196,17 +246,17 @@ export default function DashboardPage() {
 
                     <div className="px-5 sm:px-6 py-3 bg-[#faf9f7] border-t border-outline-variant/10 flex items-center justify-between">
                       <div className="flex items-center gap-6">
-                        <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
+                        <button onClick={() => handleLike(post.id)} className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
                           <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">
                             thumb_up
                           </span>
-                          <span className="text-sm font-bold">{post.likes || 0}</span>
+                          <span className="text-sm font-bold">{post.likes_count || 0}</span>
                         </button>
                         <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
                           <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">
                             chat_bubble
                           </span>
-                          <span className="text-sm font-bold">{post.comments || 0}</span>
+                          <span className="text-sm font-bold">{post.comments?.[0]?.count || 0}</span>
                         </button>
                       </div>
                     </div>

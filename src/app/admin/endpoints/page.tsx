@@ -85,6 +85,18 @@ export default function AdminEndpointsPage() {
       path: "/api/public/events",
       description: "Retorna todos los eventos públicos del calendario evadiendo reglas de fila (RLS) para display abierto.",
       body: "N/A"
+    },
+    {
+      method: "POST",
+      path: "/api/private/feed",
+      description: "Crea una nueva publicación (post) en el feed de una comunidad para el usuario autenticado.",
+      body: "{ communityId, content }"
+    },
+    {
+      method: "POST",
+      path: "/api/private/feed/[postId]/like",
+      description: "Incrementa el contador de likes en una publicación del feed de manera optimista.",
+      body: "N/A"
     }
   ];
 
