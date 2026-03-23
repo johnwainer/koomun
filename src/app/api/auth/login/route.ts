@@ -10,21 +10,25 @@ export async function POST(req: Request) {
     }
 
     // Usamos el cliente estándar (Public) para iniciar sesión
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
+    const { data, error: authError } = await supabaseClient.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
+    if (authError || !data.user) {
+      return NextResponse.json({ error: authError?.message || 'Login failed' }, { status: 401 });
     }
 
     // Buscamos el rol real del usuario en la tabla Profiles
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: dbError } = await supabaseClient
       .from('profiles')
       .select('role')
       .eq('id', data.user.id)
       .single();
+
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message, context: "Profile Fetch failed" }, { status: 401 });
+    }
 
     // Devuelve los tokens para que Web/Apps móviles la guarden (ej. SecureStore en iOS/Android)
     return NextResponse.json({ 
