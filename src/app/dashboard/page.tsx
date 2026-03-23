@@ -39,7 +39,20 @@ export default function MyCommunitiesPage() {
                     const sgData = await sgRes.json();
                     if (sgData.communities) {
                        const shuffled = [...sgData.communities].sort(() => 0.5 - Math.random());
-                       setSuggested(shuffled.slice(0, 3));
+                       const mapped = shuffled.slice(0, 3).map((c: any) => ({
+                          id: c.id,
+                          slug: c.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                          title: c.title,
+                          description: c.description || "",
+                          category: c.category?.name || "Varia",
+                          members: c.members?.[0]?.count ? c.members[0].count.toString() : "0", 
+                          price: c.price_tier,
+                          image: c.cover_image_url || `https://picsum.photos/seed/${c.id}/400/250`,
+                          creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
+                          creatorUsername: c.creator?.username || `Creador-${c.id}`,
+                          isElite: c.creator?.plan === 'elite'
+                       }));
+                       setSuggested(mapped);
                     }
                  }
               }
@@ -95,21 +108,77 @@ export default function MyCommunitiesPage() {
                              <div
                                onClick={() => router.push(`/c/${community.slug}`)}
                                key={community.id}
-                               className="bg-surface-container-lowest border border-outline-variant/20 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col cursor-pointer"
+                               className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group flex flex-col h-full cursor-pointer"
                              >
-                               <div className="h-40 bg-surface-container-highest overflow-hidden relative">
-                                 <img
-                                   alt={community.title}
-                                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-                                   src={community.cover_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(community.title)}&size=300`}
-                                 />
-                               </div>
-                               <div className="p-6 pt-5 flex flex-col flex-1">
-                                  <h3 className="font-extrabold text-xl text-on-surface mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                                <div className="relative">
+                                  <div className="h-40 bg-surface-container-high overflow-hidden relative">
+                                    <img
+                                      alt={community.title}
+                                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                      src={community.image}
+                                      onError={(e) => { e.currentTarget.src = "https://picsum.photos/400/250?blur=2"; }}
+                                    />
+                                  </div>
+                                  
+                                  <div className="absolute bottom-0 left-6 translate-y-1/2 z-10">
+                                    <div 
+                                        className="relative cursor-pointer hover:scale-105 transition-transform"
+                                        onClick={(e) => {
+                                           e.stopPropagation();
+                                           router.push(`/creator/${community.creatorUsername}`);
+                                        }}
+                                    >
+                                       <div className={`w-12 h-12 rounded-full border-[3px] bg-surface-container-high overflow-hidden shadow-sm ${community.isElite ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
+                                         <img src={community.creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
+                                       </div>
+                                       {community.isElite && (
+                                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[6px] font-black uppercase tracking-widest px-1.5 py-[1px] rounded-full shadow border-2 border-surface-container-lowest whitespace-nowrap z-20 md:text-[7px] md:px-2 md:py-0.5">
+                                             Elite
+                                          </div>
+                                       )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="p-6 pt-8 flex flex-col flex-1">
+                                  <div className="flex justify-between items-start mb-2">
+                                     <div className="flex gap-2">
+                                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border ${
+                                            [
+                                              "text-blue-700 bg-blue-50 border-blue-200",
+                                              "text-emerald-700 bg-emerald-50 border-emerald-200",
+                                              "text-amber-700 bg-amber-50 border-amber-200",
+                                              "text-purple-700 bg-purple-50 border-purple-200",
+                                              "text-rose-700 bg-rose-50 border-rose-200"
+                                            ][(community.category || 'C').length % 5]
+                                        }`}>
+                                          {community.category}
+                                        </span>
+                                     </div>
+                                  </div>
+                                  <h3 className="font-extrabold text-lg text-on-surface mb-2 leading-tight group-hover:text-primary transition-colors">
                                      {community.title}
                                   </h3>
-                                  <button className="mt-auto pt-4 text-sm font-bold text-primary group-hover:underline self-start">Ver Detalles →</button>
-                               </div>
+                                  <p className="text-on-surface-variant text-xs mb-6 line-clamp-2 leading-relaxed flex-1">
+                                    {community.description}
+                                  </p>
+
+                                  <div className="flex items-center justify-between pt-4 border-t border-outline-variant/10 mt-auto">
+                                    <div className="flex items-center gap-2 text-on-surface-variant">
+                                      <span className="material-symbols-outlined text-[16px]">
+                                        group
+                                      </span>
+                                      <span className="text-xs font-bold">
+                                         {community.members}
+                                      </span>
+                                    </div>
+                                    {community.price && community.price !== 'Gratis' && (
+                                       <span className={`text-xs font-black px-2 py-0.5 rounded text-on-surface bg-surface-container-highest`}>
+                                         {community.price}
+                                       </span>
+                                    )}
+                                  </div>
+                                </div>
                              </div>
                            ))}
                         </div>
