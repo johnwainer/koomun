@@ -51,18 +51,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
        }
     }
 
-    // Traer próximos eventos (solo si es miembro)
+    // Traer próximos eventos para mostrarlos a todos en el landing
     let events: any[] = [];
-    if (isMember) {
-      const { data } = await supabaseClient
-        .from('events')
-        .select('id, title, event_date, event_time, description, type')
-        .eq('community_id', community.id)
-        .gte('event_date', new Date().toISOString().split('T')[0])
-        .order('event_date', { ascending: true })
-        .limit(3);
-      events = data || [];
-    }
+    const { data } = await supabaseClient
+      .from('events')
+      .select('id, title, event_date, event_time, description, type')
+      .eq('community_id', community.id)
+      .gte('event_date', new Date().toISOString().split('T')[0])
+      .order('event_date', { ascending: true })
+      .limit(3);
+    events = data || [];
 
     return NextResponse.json({ community, events, isMember }, { status: 200 });
 
