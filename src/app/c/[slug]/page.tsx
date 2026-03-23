@@ -21,6 +21,7 @@ export default function CommunityLandingPage() {
   const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [accessError, setAccessError] = useState(false);
 
@@ -111,7 +112,7 @@ export default function CommunityLandingPage() {
 
   const handleLeave = async () => {
      if (!community) return;
-     if (!confirm("¿Seguro que quieres abandonar esta comunidad? Perderás el acceso y se borrará toda tu participación.")) return;
+     setShowLeaveModal(false);
      setLeaving(true);
      try {
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -328,7 +329,7 @@ export default function CommunityLandingPage() {
 
                     {isMember && (
                         <button 
-                           onClick={handleLeave}
+                           onClick={() => setShowLeaveModal(true)}
                            disabled={leaving}
                            className="w-full text-xs text-red-500 font-bold hover:underline transition-colors mt-2 text-center"
                         >
@@ -341,6 +342,38 @@ export default function CommunityLandingPage() {
 
            </div>
         </div>
+
+        {/* Sober Leave Modal Checkout equivalent */}
+        {showLeaveModal && (
+           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+             <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+                <div className="p-6 pb-2 text-center flex flex-col items-center">
+                   <div className="w-14 h-14 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-4 shrink-0">
+                      <span className="material-symbols-outlined text-2xl">logout</span>
+                   </div>
+                   <h3 className="text-xl font-bold text-on-surface mb-2">Abandonar Comunidad</h3>
+                   <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
+                      ¿Estás seguro de que deseas salir de <strong className="text-on-surface line-clamp-1 break-words">{community.title}</strong>? <br/><br/>
+                      Si lo haces, se borrará toda tu actividad y progreso registrado en ella de forma irreversible.
+                   </p>
+                </div>
+                <div className="p-6 pt-6 flex flex-col gap-3">
+                   <button 
+                      onClick={handleLeave}
+                      className="w-full py-3.5 rounded-full font-extrabold text-white bg-red-500 hover:bg-red-600 shadow shadow-red-500/20 active:scale-95 transition-all"
+                   >
+                      Sí, abandonar
+                   </button>
+                   <button 
+                      onClick={() => setShowLeaveModal(false)}
+                      className="w-full py-3.5 rounded-full font-bold text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors"
+                   >
+                      Cancelar
+                   </button>
+                </div>
+             </div>
+           </div>
+        )}
       </main>
 
       {/* Floating Mobile Join Button */}
