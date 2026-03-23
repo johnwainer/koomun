@@ -18,6 +18,8 @@ type CalendarEvent = {
   description: string;
   creator: string;
   creator_username?: string;
+  creator_avatar?: string;
+  creator_plan?: string;
   community_title?: string;
   is_mine?: boolean;
 };
@@ -72,6 +74,8 @@ export default function CalendarPage() {
                    description: e.description || "Un evento increíble público.",
                    creator: e.creator?.full_name || "Comunidad",
                    creator_username: e.creator?.username || "creador",
+                   creator_avatar: e.creator?.avatar_url,
+                   creator_plan: e.creator?.plan,
                    community_title: e.community?.title || "Comunidad",
                    is_mine: myCommunityIds.includes(e.community_id)
                 };
@@ -263,9 +267,16 @@ export default function CalendarPage() {
                             router.push(`/creator/${evt.creator_username}`);
                           }
                         }}
-                        className="flex items-center gap-2 group/creator hover:bg-surface-container-high px-2 py-1 -ml-2 rounded-lg transition-colors cursor-pointer"
+                        className="flex items-center gap-2 group/creator hover:bg-surface-container-high px-2 py-1 -ml-2 rounded-lg transition-colors cursor-pointer relative"
                       >
-                        <img className="w-7 h-7 rounded-full border border-outline-variant/30" src={`https://i.pravatar.cc/150?u=${evt.creator}`} alt={evt.creator} />
+                        <div className="relative">
+                          <img className="w-7 h-7 rounded-full border border-outline-variant/30 object-cover" src={evt.creator_avatar || `https://i.pravatar.cc/150?u=${evt.creator}`} alt={evt.creator} />
+                          {evt.creator_plan === 'elite' && (
+                             <div className="absolute -bottom-1 -right-1 bg-zinc-900 text-white text-[6px] font-black uppercase tracking-widest px-1 py-0.5 rounded-full shadow-lg border border-surface-container-lowest">
+                                E
+                             </div>
+                          )}
+                        </div>
                         <span className="text-xs font-bold text-on-surface tracking-wide group-hover/creator:text-primary">{evt.creator}</span>
                       </div>
                       <div className="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-full text-[10px] font-bold text-on-surface-variant">

@@ -16,6 +16,7 @@ type Community = {
   price: string;
   image: string;
   creatorAvatar: string;
+  creatorUsername: string;
   isElite: boolean;
 };
 
@@ -65,6 +66,7 @@ export default function DiscoverPage() {
             price: c.price_tier,
             image: c.cover_image_url || `https://picsum.photos/seed/${c.id}/400/250`,
             creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
+            creatorUsername: c.creator?.username || `Creador-${c.id}`,
             isElite: c.creator?.plan === 'elite'
           }));
           setMockCommunities(mapped);
@@ -157,8 +159,15 @@ export default function DiscoverPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
               
-              <div className="absolute top-4 right-4">
-                <div className="w-14 h-14 rounded-full border-4 border-white/20 overflow-hidden shadow-2xl bg-surface-container-highest">
+              <div 
+                  className="absolute top-4 right-4 cursor-pointer hover:scale-105 transition-transform"
+                  onClick={(e) => {
+                     e.preventDefault();
+                     e.stopPropagation();
+                     router.push(`/creator/${mockCommunities[0].creatorUsername}`);
+                  }}
+              >
+                <div className={`w-14 h-14 rounded-full border-4 overflow-hidden shadow-2xl bg-surface-container-highest ${mockCommunities[0].isElite ? 'border-zinc-900' : 'border-white/20'}`}>
                    <img src={mockCommunities[0].creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
                 </div>
               </div>
@@ -268,7 +277,7 @@ export default function DiscoverPage() {
                         className="relative cursor-pointer hover:scale-105 transition-transform"
                         onClick={(e) => {
                            e.stopPropagation();
-                           router.push(`/creator/Creador-${community.id}`);
+                           router.push(`/creator/${community.creatorUsername}`);
                         }}
                     >
                        <div className={`w-12 h-12 rounded-full border-[3px] bg-surface-container-high overflow-hidden shadow-sm ${community.isElite ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>

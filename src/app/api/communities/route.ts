@@ -12,7 +12,7 @@ export async function GET(req: Request) {
         price_tier,
         cover_image_url,
         is_published,
-        creator:profiles(id, full_name, avatar_url, plan),
+        creator:profiles(id, full_name, username, avatar_url, plan),
         category:categories(name)
       `)
       .eq('is_published', true)
