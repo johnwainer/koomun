@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TopNavBar from "@/components/TopNavBar";
@@ -8,7 +8,7 @@ import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
 
 type Community = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   category: string;
@@ -16,88 +16,15 @@ type Community = {
   price: string;
   image: string;
   creatorAvatar: string;
+  isElite: boolean;
 };
-
-// Base 40 communities
-const baseCommunities = [
-  { id: 1, title: "Insights Hub", description: "La comunidad más grande para analistas en Latam.", category: "Tecnología", members: "8k", price: "Gratis" },
-  { id: 2, title: "Solo Founder's Club", description: "Bootstrapping de 0 a 1. Masterminds semanales.", category: "Negocios", members: "2.1k", price: "$15/mo" },
-  { id: 3, title: "Visual Explorers", description: "Un espacio para artistas 3D y creadores experimentales.", category: "Diseño", members: "5.4k", price: "Gratis" },
-  { id: 4, title: "The Backend Guild", description: "Arquitectura de sistemas escalables y alta performance.", category: "Tecnología", members: "1.8k", price: "$49/mo" },
-  { id: 5, title: "Marketing para Devs", description: "Aprende a vender tus proyectos de software y conseguir usuarios iniciales.", category: "Marketing", members: "4.2k", price: "Gratis" },
-  { id: 6, title: "IA Creativa LATAM", description: "Domina Midjourney, Stable Diffusion y ChatGPT.", category: "Inteligencia Artificial", members: "12k", price: "$9/mo" },
-  { id: 7, title: "Finanzas Freelance", description: "Masterclass y comunidad para ordenar tus ingresos.", category: "Negocios", members: "3.5k", price: "$29/mo" },
-  { id: 8, title: "No-Code Makers", description: "Crea aplicaciones sin escribir código con Bubble y Make.", category: "Tecnología", members: "6.7k", price: "Gratis" },
-  { id: 9, title: "Copywriting Masters", description: "Textos que venden. Ejercicios diarios y feedback cruzado.", category: "Marketing", members: "1.2k", price: "$19/mo" },
-  { id: 10, title: "UX Writers LATAM", description: "Diseñando experiencias a través de las palabras.", category: "Diseño", members: "3.1k", price: "Gratis" },
-  { id: 11, title: "SaaS Builders", description: "De idea a $10k MRR. Construyendo SaaS de forma transparente.", category: "Negocios", members: "2.4k", price: "$99/mo" },
-  { id: 12, title: "Prompt Engineers", description: "Ingeniería de prompts avanzada para Claude y OpenAI.", category: "Inteligencia Artificial", members: "15k", price: "Gratis" },
-  { id: 13, title: "Español para Nómadas", description: "Aprende español interactuando todos los días.", category: "Idiomas", members: "1.1k", price: "$5/mo" },
-  { id: 14, title: "Salud y Productividad", description: "Optimiza tu energía, sueño y enfoque para rendir mejor.", category: "Salud", members: "4.8k", price: "Gratis" },
-  { id: 15, title: "Artistas Digitales", description: "Procreate, Photoshop y dibujo digital avanzado.", category: "Arte", members: "7.2k", price: "$12/mo" },
-  { id: 16, title: "Frontend Fanatics", description: "React, Vue, Svelte y todo lo nuevo web.", category: "Tecnología", members: "18k", price: "Gratis" },
-  { id: 17, title: "Ventas B2B Elite", description: "Estrategias de prospección y cierre de ventas corporativas.", category: "Negocios", members: "1.5k", price: "$40/mo" },
-  { id: 18, title: "Web Design Pro", description: "Crea sitios web premium que cobran $5k+.", category: "Diseño", members: "3.2k", price: "$29/mo" },
-  { id: 19, title: "Agencias Digitales", description: "Escala tu agencia a 6 cifras, consigue clientes y delega.", category: "Negocios", members: "8.9k", price: "Gratis" },
-  { id: 20, title: "Meta Ads Masters", description: "Campañas escalables, creativos que venden y ROAS alto.", category: "Marketing", members: "2.5k", price: "$10/mo" },
-  { id: 21, title: "Club de la Inteligencia", description: "Noticias diarias, uso y recursos de la Inteligencia Artificial.", category: "Inteligencia Artificial", members: "25k", price: "Gratis" },
-  { id: 22, title: "English for IT", description: "Mejora tu inglés técnico para trabajar en EEUU o Europa.", category: "Idiomas", members: "9.3k", price: "$15/mo" },
-  { id: 23, title: "Biohacking Hispano", description: "Optimiza tu fisiología. Suplementos, rutinas y longevidad.", category: "Salud", members: "4.1k", price: "Gratis" },
-  { id: 24, title: "Fotografía y Cine", description: "Aprende de cineastas e iluminadores a nivel profesional.", category: "Arte", members: "11k", price: "$25/mo" },
-  { id: 25, title: "Python Devs", description: "Data, Web, Scripts. La comunidad amigable de Python.", category: "Tecnología", members: "30k", price: "Gratis" },
-  { id: 26, title: "TikTok Creators", description: "Reels y TikToks virales. Guiones, ganchos y edición rápida.", category: "Marketing", members: "14k", price: "$9/mo" },
-  { id: 27, title: "Ecommerce 360", description: "Dropshipping, Marcas Propias y Logística para E-com.", category: "Negocios", members: "6k", price: "$39/mo" },
-  { id: 28, title: "Figma Community", description: "Recursos, plugins, y feedback constante de diseño de interfaz.", category: "Diseño", members: "22k", price: "Gratis" },
-  { id: 29, title: "Robotics & IoT", description: "Hardware e internet de las cosas. Proyectos semanales.", category: "Tecnología", members: "3.3k", price: "$12/mo" },
-  { id: 30, title: "SEO Especialistas", description: "Posicionamiento orgánico de élite. Linkbuilding real.", category: "Marketing", members: "8.5k", price: "Gratis" },
-  { id: 31, title: "Lógica y Algoritmos", description: "Preparación pura para entrevistas técnicas (FAANG/MAANG).", category: "Tecnología", members: "15k", price: "$49/mo" },
-  { id: 32, title: "Club de Inversores", description: "Análisis financiero, acciones, bolsa y macroeconomía.", category: "Negocios", members: "55k", price: "Gratis" },
-  { id: 33, title: "Product Managers", description: "Arte y ciencia de construir productos que la gente ama.", category: "Negocios", members: "9k", price: "$29/mo" },
-  { id: 34, title: "Motion Graphics", description: "Animación en After Effects y modelado ligero en Cinema4D.", category: "Diseño", members: "4.7k", price: "$15/mo" },
-  { id: 35, title: "Escritura Creativa", description: "Talleres literarios para novelas, cuentos y guiones.", category: "Arte", members: "6.3k", price: "Gratis" },
-  { id: 36, title: "Fullstack React", description: "Next.js, Tailwind, TypeScript, Supabase y tRPC.", category: "Tecnología", members: "42k", price: "Gratis" },
-  { id: 37, title: "Mentes Maestras", description: "Mastermind exclusivo de CEO's y fundadores tech (ingreso rígido).", category: "Negocios", members: "500", price: "$200/mo" },
-  { id: 38, title: "Nutrición Basada en Evidencia", description: "Dile adiós a los mitos fitness. Todo con papers.", category: "Salud", members: "16k", price: "Gratis" },
-  { id: 40, title: "Cybersecurity Net", description: "Hackeo ético, blue teaming y caza de exploits.", category: "Tecnología", members: "11k", price: "$30/mo" }
-];
-
-const gifPallette = [
-  "https://media.giphy.com/media/l41lFw057lAJQMwg0/giphy.gif",
-  "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-  "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif", 
-  "https://media.giphy.com/media/3oKIPEqDGUULpEU0aQ/giphy.gif",
-  "https://media.giphy.com/media/QvBoMEcQ7DQXK/giphy.gif", 
-  "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif", 
-  "https://media.giphy.com/media/LmNwrBhejkK9EFP504/giphy.gif",
-  "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
-  "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
-  "https://media.giphy.com/media/MDJ9IbxxvDUQM/giphy.gif",
-  "https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif",
-  "https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif",
-  "https://media.giphy.com/media/3KVSB0dZyffZNKraXB/giphy.gif",
-  "https://media.giphy.com/media/3oEduV4SOS9mmmIOkw/giphy.gif"
-];
-
-const mappedBaseCommunities = baseCommunities.map((c, index) => ({
-  ...c,
-  // Distribuir GIFs al 50% de las tarjetas para máximo dinamismo
-  image: index % 2 === 0 
-           ? gifPallette[(index / 2) % gifPallette.length] 
-           : `https://picsum.photos/id/${c.id + 10}/400/250`, 
-  creatorAvatar: `https://i.pravatar.cc/150?u=${c.id}` 
-}));
-
-// Generar ~120 Mocks
-const mockCommunities: Community[] = [
-  ...mappedBaseCommunities,
-  ...mappedBaseCommunities.map(c => ({ ...c, id: c.id + 40, image: `https://picsum.photos/id/${c.id + 50}/400/250`, creatorAvatar: `https://i.pravatar.cc/150?u=${c.id + 40}` })),
-  ...mappedBaseCommunities.map(c => ({ ...c, id: c.id + 80, image: `https://picsum.photos/id/${c.id + 90}/400/250`, creatorAvatar: `https://i.pravatar.cc/150?u=${c.id + 80}` }))
-];
 
 export default function DiscoverPage() {
   const router = useRouter();
+  const [mockCommunities, setMockCommunities] = useState<Community[]>([]);
   const [activeCategory, setActiveCategory] = useState("Todas");
   const [visibleCount, setVisibleCount] = useState(12);
+  const [loading, setLoading] = useState(true);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +38,34 @@ export default function DiscoverPage() {
       });
     }
   };
+  
+  useEffect(() => {
+    async function fetchDB() {
+      try {
+        const res = await fetch("/api/communities");
+        const data = await res.json();
+        if (data.communities) {
+          const mapped = data.communities.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            description: c.description || "",
+            category: c.category?.name || "Varia",
+            members: "Recién Creada", // TODO: Build a dynamic system to fetch members count
+            price: c.price_tier,
+            image: c.cover_image_url || `https://picsum.photos/seed/${c.id}/400/250`,
+            creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
+            isElite: c.creator?.plan === 'elite'
+          }));
+          setMockCommunities(mapped);
+        }
+      } catch (e) {
+        console.error("Failed fetching", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchDB();
+  }, []);
 
   const categories = [
     "Todas", "Diseño", "Tecnología", "Negocios", "Marketing", "Inteligencia Artificial", "Idiomas", "Salud", "Arte", "Desarrollo Creativo", "Ventas B2B", "Trading", "Criptomonedas", "No-Code", "Gastronomía", "Música"
@@ -185,34 +140,35 @@ export default function DiscoverPage() {
            </div>
         </div>
 
-        {activeCategory === "Todas" && (
+        {!loading && activeCategory === "Todas" && mockCommunities.length > 0 && (
           <section className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-16">
-            <Link href="/c/design-systems-latam" className="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-lowest h-[400px] block cursor-pointer">
+            <Link href={`/c/${mockCommunities[0].title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-lowest h-[400px] block cursor-pointer">
               <img
                 alt="Featured Community"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                src="https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif"
+                src={mockCommunities[0].image}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
               
               <div className="absolute top-4 right-4">
                 <div className="w-14 h-14 rounded-full border-4 border-white/20 overflow-hidden shadow-2xl bg-surface-container-highest">
-                   <img src="https://i.pravatar.cc/150?u=featured1" alt="Creator" className="w-full h-full object-cover" />
+                   <img src={mockCommunities[0].creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
                 </div>
               </div>
 
               <div className="absolute bottom-0 left-0 p-8 text-on-primary">
-                <div className="flex gap-2 mb-4">
-                  <span className="px-3 py-1 bg-primary text-[10px] font-bold uppercase tracking-widest rounded-full text-white shadow-lg">
-                    Elección del Editor
-                  </span>
-                </div>
+                {mockCommunities[0].isElite && (
+                   <div className="flex gap-2 mb-4">
+                     <span className="px-3 py-1 bg-primary text-[10px] font-bold uppercase tracking-widest rounded-full text-white shadow-lg">
+                       Comunidad Elite
+                     </span>
+                   </div>
+                )}
                 <h2 className="text-3xl font-bold mb-2 text-white">
-                  Design Systems Latam
+                   {mockCommunities[0].title}
                 </h2>
                 <p className="text-white/80 max-w-md text-sm mb-6 leading-relaxed hidden sm:block">
-                  Aprende a construir tokens, componentes escalables y variables
-                  en Figma. Casos de estudio interactivos.
+                   {mockCommunities[0].description}
                 </p>
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
@@ -223,7 +179,7 @@ export default function DiscoverPage() {
                     <span className="material-symbols-outlined text-[18px] text-white/90">
                       group
                     </span>
-                    <span className="font-bold text-sm text-white">12k Miembros</span>
+                    <span className="font-bold text-sm text-white">{mockCommunities[0].members}</span>
                   </div>
                 </div>
               </div>
@@ -235,23 +191,13 @@ export default function DiscoverPage() {
               <div className="flex flex-col h-full">
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-outline-variant/10">
                    <span className="material-symbols-outlined text-primary text-2xl animate-pulse">local_fire_department</span>
-                   <h3 className="text-lg font-extrabold text-on-surface uppercase tracking-tight">Tendencias Rápidas</h3>
+                   <h3 className="text-lg font-extrabold text-on-surface uppercase tracking-tight">Recién Publicadas</h3>
                 </div>
                 
                 <div className="space-y-1 overflow-y-auto pr-2 flex-1 max-h-[260px] custom-scrollbar">
-                  {[
-                    { title: "React Native Masters", mems: "5.4k", rise: "+120 hoy" },
-                    { title: "Creadores Notion", mems: "14k", rise: "+89 hoy" },
-                    { title: "SaaS Builders Elite", mems: "1.2k", rise: "+45 hoy" },
-                    { title: "E-commerce Pro", mems: "800", rise: "+42 hoy" },
-                    { title: "UI Design Hackers", mems: "4.5k", rise: "+30 hoy" },
-                    { title: "Escritura Persuasiva", mems: "12k", rise: "+25 hoy" },
-                    { title: "Startups Latam Ai", mems: "3k", rise: "+18 hoy" },
-                    { title: "Inglés para Devs", mems: "22k", rise: "+15 hoy" },
-                    { title: "Finanzas Personales", mems: "18k", rise: "+12 hoy" },
-                    { title: "Agencias Digitales 360", mems: "9.1k", rise: "+10 hoy" },
-                  ].map((trend, i) => (
+                  {mockCommunities.slice(1, 11).map((trend, i) => (
                     <div
+                      onClick={() => router.push(`/c/${trend.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
                       key={i}
                       className="flex items-center gap-4 group cursor-pointer p-3 rounded-2xl hover:bg-surface-container-high transition-all"
                     >
@@ -264,10 +210,10 @@ export default function DiscoverPage() {
                         </h4>
                         <div className="flex items-center gap-2 mt-0.5">
                            <span className="text-[10px] text-on-surface-variant font-medium">
-                             {trend.mems} miembros
+                             {trend.members} miembros
                            </span>
                            <span className="text-[10px] text-green-500 font-bold bg-green-500/10 px-1.5 rounded-md">
-                             {trend.rise}
+                             NUEVO
                            </span>
                         </div>
                       </div>
@@ -277,8 +223,8 @@ export default function DiscoverPage() {
                 </div>
                 
                 <div className="pt-4 mt-2 border-t border-outline-variant/10">
-                   <button className="w-full py-2.5 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary-dark text-xs font-bold rounded-xl transition-colors tracking-wide flex justify-center items-center gap-2">
-                     Explorar Ranking Completo
+                   <button className="w-full py-2.5 bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold rounded-xl transition-colors tracking-wide flex justify-center items-center gap-2">
+                     Explorar Comunidades Premium
                    </button>
                 </div>
               </div>
@@ -318,10 +264,10 @@ export default function DiscoverPage() {
                            router.push(`/creator/Creador-${community.id}`);
                         }}
                     >
-                       <div className={`w-12 h-12 rounded-full border-[3px] bg-surface-container-high overflow-hidden shadow-sm ${community.id % 2 === 0 ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
+                       <div className={`w-12 h-12 rounded-full border-[3px] bg-surface-container-high overflow-hidden shadow-sm ${community.isElite ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
                          <img src={community.creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
                        </div>
-                       {community.id % 2 === 0 && (
+                       {community.isElite && (
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[6px] font-black uppercase tracking-widest px-1.5 py-[1px] rounded-full shadow border-2 border-surface-container-lowest whitespace-nowrap z-20 md:text-[7px] md:px-2 md:py-0.5">
                              Elite
                           </div>
@@ -365,7 +311,12 @@ export default function DiscoverPage() {
             ))}
           </div>
 
-          {filteredCommunities.length === 0 && (
+          {loading ? (
+             <div className="text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
+                <span className="material-symbols-outlined text-4xl text-primary mb-2 animate-spin">refresh</span>
+                <p className="font-bold text-on-surface-variant">Conectando Mundos...</p>
+             </div>
+          ) : filteredCommunities.length === 0 && (
              <div className="text-center py-20 bg-surface-container-low rounded-xl border border-outline-variant/20">
                 <span className="material-symbols-outlined text-4xl text-outline-variant mb-2">search_off</span>
                 <p className="font-bold text-on-surface-variant">No se encontraron comunidades en esta categoría.</p>
