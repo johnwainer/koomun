@@ -235,12 +235,15 @@ export default function CalendarPage() {
                     <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${evt.type === 'Taller' ? 'bg-amber-500' : evt.type === 'Reunión' ? 'bg-green-500' : 'bg-purple-500'}`}></div>
                     
                     <div className="flex items-center justify-between mb-3">
-                       <div className="flex items-center gap-2">
+                       <div className="flex items-center gap-2 flex-wrap">
                           <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md flex items-center gap-1.5 border ${
                             evt.type === 'Taller' ? 'bg-amber-50 text-amber-700 border-amber-200' : evt.type === 'Reunión' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200'
                           }`}>
                             <span className="material-symbols-outlined text-[12px]">{evt.type === 'Taller' ? 'design_services' : evt.type === 'Reunión' ? 'groups' : 'chat'}</span>
                             {evt.type}
+                          </span>
+                          <span className="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest bg-surface-container-high border border-outline-variant/20 text-on-surface flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[12px]">dataset</span> {evt.community_title}
                           </span>
                           {evt.is_mine && (
                              <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-primary text-white flex items-center gap-1 shadow-sm"><span className="material-symbols-outlined text-[10px]">star</span> Tu Comunidad</span>

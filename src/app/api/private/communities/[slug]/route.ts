@@ -57,8 +57,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       .from('events')
       .select('id, title, event_date, event_time, description, type')
       .eq('community_id', community.id)
-      .gte('event_date', new Date().toISOString().split('T')[0])
-      .order('event_date', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(3);
     events = data || [];
 
