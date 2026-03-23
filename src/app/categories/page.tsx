@@ -1,155 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
 import Link from "next/link";
 
+type Category = {
+  id: string;
+  title: string;
+  count: number;
+  color: string;
+  icon: string;
+  featuredImage: string;
+  featuredCommunity: string;
+  featuredDesc: string;
+};
+
 export default function CategoriesPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const categories = [
-    {
-      id: "tech",
-      title: "Desarrollo & Software",
-      count: "215",
-      color: "from-blue-600 to-cyan-500",
-      icon: "code",
-      featuredImage: "https://media.giphy.com/media/LmNwrBhejkK9EFP504/giphy.gif",
-      featuredCommunity: "React Native Masters",
-      featuredDesc: "Domina el desarrollo móvil trans-plataforma."
-    },
-    {
-      id: "design",
-      title: "Diseño Visual & UI/UX",
-      count: "124",
-      color: "from-pink-600 to-rose-400",
-      icon: "palette",
-      featuredImage: "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-      featuredCommunity: "UI Design Hackers",
-      featuredDesc: "De conceptualización a Figma tokens avanzados."
-    },
-    {
-      id: "ai",
-      title: "Inteligencia Artificial",
-      count: "95",
-      color: "from-purple-600 to-indigo-500",
-      icon: "smart_toy",
-      featuredImage: "https://media.giphy.com/media/xUPJPl5gXPo8CtyqQ/giphy.gif",
-      featuredCommunity: "Startups Latam Ai",
-      featuredDesc: "Automatiza tu agencia con LLMs reales."
-    },
-    {
-      id: "business",
-      title: "Negocios & SaaS",
-      count: "86",
-      color: "from-amber-600 to-yellow-500",
-      icon: "storefront",
-      featuredImage: "https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif",
-      featuredCommunity: "SaaS Builders Elite",
-      featuredDesc: "Lleva tu ARR a los cielos con nosotros."
-    },
-    {
-      id: "marketing",
-      title: "Marketing Digital",
-      count: "142",
-      color: "from-orange-600 to-red-500",
-      icon: "campaign",
-      featuredImage: "https://media.giphy.com/media/3o8dp8yN4uU37N8Hj2/giphy.gif",
-      featuredCommunity: "Agencias Digitales 360",
-      featuredDesc: "Generación de leads B2B predecible."
-    },
-    {
-      id: "web3",
-      title: "Cripto & Web3",
-      count: "72",
-      color: "from-emerald-600 to-teal-400",
-      icon: "currency_bitcoin",
-      featuredImage: "https://media.giphy.com/media/7FBY7h5Psqd20/giphy.gif",
-      featuredCommunity: "DeFi Academy Pro",
-      featuredDesc: "Aprende Smart Contracts y finanzas descentralizadas."
-    },
-    {
-       id: "languages",
-       title: "Idiomas & Fluidez",
-       count: "45",
-       color: "from-fuchsia-600 to-pink-500",
-       icon: "translate",
-       featuredImage: "https://media.giphy.com/media/26tn33aiTi1haPEoE/giphy.gif",
-       featuredCommunity: "English Native Path",
-       featuredDesc: "Domina el inglés para negocios internacionales."
-    },
-    {
-       id: "health",
-       title: "Salud & Bienestar",
-       count: "68",
-       color: "from-green-600 to-emerald-500",
-       icon: "favorite",
-       featuredImage: "https://media.giphy.com/media/1wqqlaQ7IX3TXibXZE/giphy.gif",
-       featuredCommunity: "Alto Rendimiento Físico",
-       featuredDesc: "Optimiza tu biología para rendir 10x."
-    },
-    {
-       id: "art",
-       title: "Arte & Expresión",
-       count: "34",
-       color: "from-indigo-600 to-purple-500",
-       icon: "brush",
-       featuredImage: "https://media.giphy.com/media/3oEjI6S13RNOBwEuBq/giphy.gif",
-       featuredCommunity: "Ilustradores Elite",
-       featuredDesc: "De hobby a cobrar por tu arte."
-    },
-    {
-       id: "sales",
-       title: "Ventas B2B",
-       count: "115",
-       color: "from-slate-600 to-zinc-500",
-       icon: "handshake",
-       featuredImage: "https://media.giphy.com/media/XG8mEYk3G2lA00mIt1/giphy.gif",
-       featuredCommunity: "Cerradores High Ticket",
-       featuredDesc: "Cómo cobrar +$5k por tus servicios."
-    },
-    {
-       id: "trading",
-       title: "Trading & Mercados",
-       count: "89",
-       color: "from-stone-600 to-neutral-500",
-       icon: "monitoring",
-       featuredImage: "https://media.giphy.com/media/JtBZm3Getg3dqxEXvX/giphy.gif",
-       featuredCommunity: "Acción del Precio Pro",
-       featuredDesc: "Operativa institucional real sin indicadores magicos."
-    },
-    {
-       id: "nocode",
-       title: "No-Code & Auto",
-       count: "210",
-       color: "from-sky-600 to-blue-500",
-       icon: "bolt",
-       featuredImage: "https://media.giphy.com/media/VbO7kE6X3nUaE2U8Jj/giphy.gif",
-       featuredCommunity: "Automatizadores",
-       featuredDesc: "Software sin escribir una sola línea de código."
-    },
-    {
-       id: "gastronomy",
-       title: "Gastronomía",
-       count: "28",
-       color: "from-red-600 to-orange-500",
-       icon: "restaurant",
-       featuredImage: "https://media.giphy.com/media/U3qYN8S0j3bpK/giphy.gif",
-       featuredCommunity: "Chefs Digitales",
-       featuredDesc: "Cocina de autor para emprendedores."
-    },
-    {
-       id: "music",
-       title: "Música & Audio",
-       count: "52",
-       color: "from-violet-600 to-fuchsia-500",
-       icon: "headphones",
-       featuredImage: "https://media.giphy.com/media/26n7bT0i7P2Yp6G6s/giphy.gif",
-       featuredCommunity: "Productores Musicales",
-       featuredDesc: "Estratégia de lanzamiento para artistas."
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCats() {
+      try {
+        const res = await fetch("/api/categories");
+        const data = await res.json();
+        
+        if (data.categories) {
+          const colors = [
+            "from-blue-600 to-cyan-500", "from-pink-600 to-rose-400", "from-purple-600 to-indigo-500",
+            "from-amber-600 to-yellow-500", "from-orange-600 to-red-500", "from-emerald-600 to-teal-400"
+          ];
+          const icons = ["code", "palette", "smart_toy", "storefront", "campaign", "currency_bitcoin"];
+          
+          const mapped = data.categories.map((c: any, index: number) => ({
+             id: c.id,
+             title: c.name,
+             count: c.communities?.[0]?.count || 0,
+             color: colors[index % colors.length],
+             icon: icons[index % icons.length],
+             featuredImage: `https://picsum.photos/seed/${c.id}/600/400`,
+             featuredCommunity: "Lo mejor de " + c.name,
+             featuredDesc: "Explora la comunidad recomendada que lidera este espacio."
+          }));
+          setCategories(mapped);
+        }
+      } catch (e) {
+        console.error("Error", e);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
+    fetchCats();
+  }, []);
+  // old mock removed
 
   return (
     <>
@@ -189,7 +95,12 @@ export default function CategoriesPage() {
             </div>
           </header>
 
-          {viewMode === "grid" ? (
+          {loading ? (
+             <div className="text-center py-20 bg-surface-container-lowest rounded-[2rem] border border-outline-variant/10 shadow-sm">
+                <span className="material-symbols-outlined text-4xl text-primary mb-2 animate-spin">refresh</span>
+                <p className="font-bold text-on-surface-variant">Conectando Categorías...</p>
+             </div>
+          ) : viewMode === "grid" ? (
              <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                {categories.map((cat) => (
                  <div key={cat.id} className="relative group rounded-[2rem] overflow-hidden bg-surface-container-highest border border-outline-variant/20 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer h-[320px]">
