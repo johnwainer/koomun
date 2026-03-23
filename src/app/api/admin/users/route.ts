@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logAction } from '@/lib/audit';
 
 export async function GET(req: Request) {
   try {
@@ -39,6 +40,13 @@ export async function DELETE(req: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await logAction({
+      action: 'DELETE_USER',
+      entityType: 'profiles',
+      entityId: userId,
+      metadata: { deleted_by: 'system_admin' }
+    });
 
     return NextResponse.json({ success: true, message: "Usuario y sus relaciones destruidas globalmente" }, { status: 200 });
 

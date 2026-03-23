@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logAction } from '@/lib/audit';
 
 export async function GET(req: Request) {
   try {
@@ -33,6 +34,13 @@ export async function PATCH(req: Request) {
 
     if (error) throw error;
     
+    await logAction({
+      action: is_published ? 'PUBLISH' : 'UNPUBLISH',
+      entityType: 'communities',
+      entityId: id,
+      metadata: { source: 'admin_panel' }
+    });
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -50,6 +58,13 @@ export async function DELETE(req: Request) {
 
     if (error) throw error;
     
+    await logAction({
+      action: 'HARD_DELETE',
+      entityType: 'communities',
+      entityId: id,
+      metadata: { deleted_by: 'admin_panel' }
+    });
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

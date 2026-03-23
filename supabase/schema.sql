@@ -19,6 +19,7 @@ DROP TABLE IF EXISTS public.events CASCADE;
 DROP TABLE IF EXISTS public.members CASCADE;
 DROP TABLE IF EXISTS public.communities CASCADE;
 DROP TABLE IF EXISTS public.categories CASCADE;
+DROP TABLE IF EXISTS public.audit_logs CASCADE;
 DROP TABLE IF EXISTS public.payment_methods CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 
@@ -36,6 +37,16 @@ CREATE TABLE public.profiles (
   plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'premium', 'elite')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE public.audit_logs (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  actor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE public.payment_methods (

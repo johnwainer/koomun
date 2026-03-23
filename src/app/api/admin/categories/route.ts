@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logAction } from '@/lib/audit';
 
 export async function GET(req: Request) {
   try {
@@ -41,6 +42,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await logAction({
+      action: 'CREATE_CATEGORY',
+      entityType: 'categories',
+      entityId: newCategory.id,
+      metadata: { name: newCategory.name }
+    });
+
     return NextResponse.json({ success: true, category: newCategory }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -59,6 +67,13 @@ export async function DELETE(req: Request) {
       .eq('id', id);
 
     if (error) throw error;
+    
+    await logAction({
+      action: 'DELETE_CATEGORY',
+      entityType: 'categories',
+      entityId: id,
+      metadata: { deleted_by: 'admin_panel' }
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (err: any) {

@@ -80,6 +80,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="material-symbols-outlined text-xl">api</span>
             API Endpoints
           </Link>
+          <Link href="/admin/logs" className={getNavClass('/admin/logs')}>
+            <span className="material-symbols-outlined text-xl">history</span>
+            Audit Logs
+          </Link>
         </nav>
         
         <div className="p-4 border-t border-outline-variant/10">
