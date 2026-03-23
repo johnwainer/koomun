@@ -33,12 +33,21 @@ CREATE TABLE public.payment_methods (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE public.categories (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  icon TEXT DEFAULT 'category',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE public.communities (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   creator_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   description TEXT,
-  category TEXT NOT NULL,
   price_tier TEXT DEFAULT 'Gratis',
   cover_image_url TEXT,
   is_published BOOLEAN DEFAULT FALSE,
@@ -144,6 +153,7 @@ END;
 $$ language 'plpgsql';
 
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON public.categories FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_communities_updated_at BEFORE UPDATE ON public.communities FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_feed_posts_updated_at BEFORE UPDATE ON public.feed_posts FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
@@ -172,6 +182,7 @@ CREATE TRIGGER on_auth_user_created
 -- Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_methods ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.communities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
@@ -192,6 +203,9 @@ CREATE POLICY "Users can view own payment methods." ON public.payment_methods FO
 CREATE POLICY "Users can insert own payment methods." ON public.payment_methods FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own payment methods." ON public.payment_methods FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete own payment methods." ON public.payment_methods FOR DELETE USING (auth.uid() = user_id);
+
+-- Categories: Anyone can view, Super Admin can mutate (Managed in API bypassing RLS anyway, but good for reads)
+CREATE POLICY "Categories are viewable by everyone." ON public.categories FOR SELECT USING (true);
 
 -- Communities: Anyone can view published, only creators can update
 CREATE POLICY "Communities are viewable by everyone." ON public.communities FOR SELECT USING (is_published = true OR auth.uid() = creator_id);
@@ -238,9 +252,11 @@ DECLARE
   users UUID[] := ARRAY[]::UUID[];
   all_uids UUID[] := ARRAY[]::UUID[];
   comms UUID[] := ARRAY[]::UUID[];
+  cats UUID[] := ARRAY[]::UUID[];
   
   new_uid UUID;
   new_comm_id UUID;
+  new_cat_id UUID;
   new_mod_id UUID;
   new_post_id UUID;
   
@@ -296,18 +312,26 @@ BEGIN
     (new_uid, lpad(floor(random()*9999)::text, 4, '0'), brands[1 + floor(random() * 3)], floor(random()*12)+1, 2026 + floor(random()*5), false);
   END LOOP;
 
+  -- 1.5. GENERATE CATEGORIES FROM SUBJECTS ARRAY
+  FOR i IN 1..array_length(subjects, 1) LOOP
+    new_cat_id := uuid_generate_v4();
+    cats := array_append(cats, new_cat_id);
+    INSERT INTO public.categories (id, name, slug) 
+    VALUES (new_cat_id, subjects[i], lower(replace(subjects[i], ' ', '-')));
+  END LOOP;
+
   -- 2. GENERATE 100 COMMUNITIES (Distribute across the 20 creators)
   FOR i IN 1..100 LOOP
     new_comm_id := uuid_generate_v4();
     comms := array_append(comms, new_comm_id);
     
-    INSERT INTO public.communities (id, creator_id, title, description, category, price_tier, cover_image_url, is_published)
+    INSERT INTO public.communities (id, creator_id, title, description, category_id, price_tier, cover_image_url, is_published)
     VALUES (
       new_comm_id, 
       creators[1 + floor(random() * array_length(creators, 1))],
       subjects[1 + floor(random() * array_length(subjects, 1))] || ' ' || adjectives[1 + floor(random() * array_length(adjectives, 1))],
       'Una comunidad exclusiva para llevar tus habilidades al siguiente nivel con mentores Elite.',
-      subjects[1 + floor(random() * array_length(subjects, 1))],
+      cats[1 + floor(random() * array_length(cats, 1))],
       '$' || (floor(random()*9) + 1) || '0/mo',
       gifs[1 + floor(random() * array_length(gifs, 1))],
       true

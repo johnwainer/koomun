@@ -70,7 +70,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
           <Link href="/admin/content" className={getNavClass('/admin/content')}>
             <span className="material-symbols-outlined text-xl">dataset</span>
-            Gestor Contenidos
+            Gestor Comunidades
+          </Link>
+          <Link href="/admin/categories" className={getNavClass('/admin/categories')}>
+            <span className="material-symbols-outlined text-xl">category</span>
+            Categorías Globales
           </Link>
           <Link href="/admin/endpoints" className={getNavClass('/admin/endpoints')}>
             <span className="material-symbols-outlined text-xl">api</span>
