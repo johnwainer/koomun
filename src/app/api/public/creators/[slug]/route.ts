@@ -5,25 +5,26 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   try {
     const { slug } = await params;
     
-    // Attempt to extract the UUID from the slug (e.g. "Creador-1" or "Full-Name-UUID")
-    const idMatch = slug.match(/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/);
-    let creatorId = idMatch ? idMatch[1] : slug;
-    
-    if (slug.startsWith('Creador-') && !idMatch) {
-       // Support old integer mock slugs if they ever reach here, but realistically all our DB ids are UUID.
-       creatorId = slug.split('-').pop() || slug;
-    }
+    // Check if the slug is a pure UUID
+    const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slug);
 
-    if (!creatorId) {
-       return NextResponse.json({ error: "No ID provided" }, { status: 400 });
-    }
-
-    // 1. Get Profile
-    const { data: profile, error: profileErr } = await supabaseClient
+    let query = supabaseClient
       .from('profiles')
-      .select('id, full_name, plan, role, bio, avatar_url')
-      .eq('id', creatorId)
-      .single();
+      .select('id, full_name, username, plan, role, bio, avatar_url');
+
+    if (isUUID) {
+       query = query.eq('id', slug);
+    } else {
+       // Support legacy URL like "Creador-UUID" and extract just the UUID
+       const idMatch = slug.match(/([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12})/);
+       if (idMatch) {
+          query = query.eq('id', idMatch[1]);
+       } else {
+          query = query.eq('username', slug);
+       }
+    }
+
+    const { data: profile, error: profileErr } = await query.single();
 
     if (profileErr || !profile) {
       return NextResponse.json({ error: "Creator not found" }, { status: 404 });
@@ -33,14 +34,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     const { data: communities } = await supabaseClient
       .from('communities')
       .select('id, title, description, cover_image_url, price_tier, category:categories(name)')
-      .eq('creator_id', creatorId)
+      .eq('creator_id', profile.id)
       .eq('is_published', true);
 
     // 3. Get Events
     const { data: events } = await supabaseClient
       .from('events')
       .select('id, title, description, type, event_date, event_time, location_or_link')
-      .eq('creator_id', creatorId)
+      .eq('creator_id', profile.id)
       .eq('visibility', 'Público')
       .order('event_date', { ascending: true })
       .limit(10);
