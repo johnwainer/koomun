@@ -21,6 +21,7 @@ export default function CommunityLandingPage() {
   const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [accessError, setAccessError] = useState(false);
 
   useEffect(() => {
@@ -105,6 +106,31 @@ export default function CommunityLandingPage() {
         console.error(e);
      } finally {
         setJoining(false);
+     }
+  };
+
+  const handleLeave = async () => {
+     if (!community) return;
+     if (!confirm("¿Seguro que quieres abandonar esta comunidad? Perderás el acceso y se borrará toda tu participación.")) return;
+     setLeaving(true);
+     try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) return router.push('/login');
+        const res = await fetch(`/api/private/communities/${slug}/leave`, {
+           method: "DELETE",
+           headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+        if (res.ok) {
+           router.push('/dashboard');
+        } else {
+           const err = await res.json();
+           console.error("Leave Error:", err);
+           alert(err.error || "Hubo un error al intentar salir.");
+        }
+     } catch(e) {
+        console.error(e);
+     } finally {
+        setLeaving(false);
      }
   };
 
@@ -295,10 +321,20 @@ export default function CommunityLandingPage() {
 
                     <button 
                        onClick={handleJoin}
-                       disabled={joining}
+                       disabled={joining || leaving}
                        className={`w-full mt-2 py-4 rounded-full font-extrabold shadow-lg transition-transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isPaid && !isMember ? 'bg-amber-500 text-amber-950 shadow-amber-500/20 hover:bg-amber-400' : 'bg-primary text-white hover:bg-primary-container shadow-primary/20'}`}>
-                       {joining ? 'Procesando...' : isMember ? 'Ir al Dashboard' : isPaid ? 'Desbloquear Acceso' : 'Unirse Gratis Ahora'}
+                       {joining ? 'Procesando...' : isMember ? 'Ir a la Comunidad' : isPaid ? 'Desbloquear Acceso' : 'Unirse Gratis Ahora'}
                     </button>
+
+                    {isMember && (
+                        <button 
+                           onClick={handleLeave}
+                           disabled={leaving}
+                           className="w-full text-xs text-red-500 font-bold hover:underline transition-colors mt-2 text-center"
+                        >
+                           {leaving ? 'Abandonando...' : 'Abandonar esta comunidad'}
+                        </button>
+                    )}
                     
                  </div>
               </div>

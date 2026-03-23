@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 export default function MyCommunitiesPage() {
   const router = useRouter();
   const [myCommunities, setMyCommunities] = useState<any[]>([]);
+  const [suggested, setSuggested] = useState<any[]>([]);
   const [authStatus, setAuthStatus] = useState<"pending" | "success" | "unauthorized" | "empty">("pending");
 
   useEffect(() => {
@@ -33,6 +34,14 @@ export default function MyCommunitiesPage() {
                  setAuthStatus("success");
               } else {
                  setAuthStatus("empty");
+                 const sgRes = await fetch("/api/communities");
+                 if (sgRes.ok) {
+                    const sgData = await sgRes.json();
+                    if (sgData.communities) {
+                       const shuffled = [...sgData.communities].sort(() => 0.5 - Math.random());
+                       setSuggested(shuffled.slice(0, 3));
+                    }
+                 }
               }
            }
        } catch (e) {
@@ -75,7 +84,38 @@ export default function MyCommunitiesPage() {
             ) : authStatus === "unauthorized" ? (
                <AccessMessage type="unauthorized" title="Debes iniciar sesión" description="Debes iniciar sesión para ver tus comunidades inscritas." icon="lock" />
             ) : authStatus === "empty" ? (
-               <AccessMessage type="empty" title="Aún no tienes comunidades" description="Aún no eres miembro de ninguna comunidad." icon="group_off" />
+               <div className="w-full">
+                  <AccessMessage type="empty" title="Aún no tienes comunidades" description="Explora algunas de nuestras comunidades sugeridas." icon="group_off" />
+                  
+                  {suggested.length > 0 && (
+                     <div className="mt-12">
+                        <h2 className="text-2xl font-black text-on-surface mb-6">Sugerencias para ti</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                           {suggested.map(community => (
+                             <div
+                               onClick={() => router.push(`/c/${community.slug}`)}
+                               key={community.id}
+                               className="bg-surface-container-lowest border border-outline-variant/20 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col cursor-pointer"
+                             >
+                               <div className="h-40 bg-surface-container-highest overflow-hidden relative">
+                                 <img
+                                   alt={community.title}
+                                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
+                                   src={community.cover_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(community.title)}&size=300`}
+                                 />
+                               </div>
+                               <div className="p-6 pt-5 flex flex-col flex-1">
+                                  <h3 className="font-extrabold text-xl text-on-surface mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                                     {community.title}
+                                  </h3>
+                                  <button className="mt-auto pt-4 text-sm font-bold text-primary group-hover:underline self-start">Ver Detalles →</button>
+                               </div>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
+               </div>
             ) : (
             myCommunities.map((community) => (
               <div
