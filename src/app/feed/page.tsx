@@ -21,6 +21,7 @@ type Post = {
 import CommunitySwitcher, { MyCommunity } from "@/components/CommunitySwitcher";
 import { useRouter } from "next/navigation";
 import AccessMessage from "@/components/AccessMessage";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -35,7 +36,10 @@ export default function DashboardPage() {
       if (!activeCommunity || accessState !== "success") return;
       setLoading(true);
       try {
-        const res = await fetch(`/api/private/feed?communityId=${activeCommunity.id}`);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const res = await fetch(`/api/private/feed?communityId=${activeCommunity.id}`, {
+           headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+        });
         if (res.status === 401) {
            router.push('/login');
            return;

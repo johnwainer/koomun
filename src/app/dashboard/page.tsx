@@ -105,14 +105,14 @@ export default function MyCommunitiesPage() {
                     <div 
                        onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/creator/Creador-${community.id}`);
+                          router.push(`/creator/${community.creatorUsername}`);
                        }}
                        className="relative cursor-pointer hover:scale-105 transition-transform"
                     >
-                       <div className={`w-16 h-16 rounded-full border-[4px] bg-surface-container overflow-hidden shadow-md ${community.price_tier === 'Pago' ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
-                         <img src={`https://i.pravatar.cc/150?u=${community.id}`} alt="Creator" className="w-full h-full object-cover" />
+                       <div className={`w-16 h-16 rounded-full border-[4px] bg-surface-container overflow-hidden shadow-md ${community.isElite ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
+                         <img src={community.creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
                        </div>
-                       {community.price_tier === 'Pago' && (
+                       {community.isElite && (
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[7px] font-black uppercase tracking-widest px-2 py-[1px] rounded-full shadow border-2 border-surface-container-lowest whitespace-nowrap z-20">
                              Elite
                           </div>

@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import CommunitySwitcher from "@/components/CommunitySwitcher";
 import type { MyCommunity } from "@/components/CommunitySwitcher";
 import AccessMessage from "@/components/AccessMessage";
+import { supabaseClient } from "@/lib/supabase";
 
 // --- Tipos de Datos ---
 type Course = {
@@ -59,7 +60,10 @@ export default function ClassroomPage() {
       if (!activeCommunity || accessState !== "success") return;
       setLoading(true);
       try {
-        const res = await fetch(`/api/private/library?communityId=${activeCommunity.id}`);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const res = await fetch(`/api/private/library?communityId=${activeCommunity.id}`, {
+           headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+        });
         if (res.status === 401) {
            router.push('/login');
            return;
