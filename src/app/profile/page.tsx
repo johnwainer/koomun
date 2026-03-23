@@ -13,6 +13,9 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>({ first_name: "", last_name: "", biography: "", website: "" });
   const [saving, setSaving] = useState(false);
+  const [password, setPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchMe() {
@@ -451,18 +454,37 @@ export default function ProfilePage() {
                     Seguridad y Privacidad
                   </h2>
 
-                  <form className="flex flex-col gap-6 max-w-sm mb-12">
+                  <form 
+                    className="flex flex-col gap-6 max-w-sm mb-12"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      if(!password) return;
+                      setSavingPassword(true);
+                      const res = await fetch("/api/private/security", {
+                        method: "PUT",
+                        body: JSON.stringify({ password }),
+                        headers: { "Content-Type": "application/json" }
+                      });
+                      if(res.ok) {
+                        alert("Contraseña actualizada con éxito");
+                        setPassword("");
+                      }
+                      setSavingPassword(false);
+                    }}
+                  >
                     <h3 className="font-bold text-base text-on-surface">Cambiar Contraseña</h3>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-bold text-on-surface">Contraseña Actual</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-bold text-on-surface">Nueva Contraseña</label>
-                      <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
+                      <input 
+                        type="password" 
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="••••••••" 
+                        className="w-full px-4 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" 
+                      />
                     </div>
-                    <button type="submit" onClick={(e) => e.preventDefault()} className="mt-2 w-full py-3 bg-primary text-white rounded-full font-bold text-sm tracking-wide hover:shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-                      Actualizar Contraseña
+                    <button type="submit" disabled={savingPassword} className="mt-2 w-full py-3 bg-primary text-white rounded-full font-bold text-sm tracking-wide hover:shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
+                      {savingPassword ? "Actualizando..." : "Actualizar Contraseña"}
                     </button>
                   </form>
 
@@ -470,8 +492,23 @@ export default function ProfilePage() {
                     <h3 className="font-bold text-base text-red-600 mb-2 border-b border-red-500/10 pb-2">Danger Zone</h3>
                     <p className="text-sm text-on-surface-variant mb-6">Una vez elimines tu cuenta, no hay vuelta atrás. Por favor confirma tu decisión cautelósamente.</p>
                     
-                    <button className="px-6 py-2.5 bg-red-500/10 border border-red-500/20 text-red-600 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition-colors focus:ring-2 focus:ring-red-500/50 outline-none">
-                      Eliminar Mi Cuenta
+                    <button 
+                      onClick={async () => {
+                        if(confirm("¿Estás 100% seguro de que deseas eliminar tu cuenta permanentemente?")) {
+                          setDeleting(true);
+                          const res = await fetch("/api/private/security", { method: "DELETE" });
+                          if(res.ok) {
+                            window.location.href = "/login";
+                          } else {
+                            alert("Ha ocurrido un error eliminando la cuenta.");
+                            setDeleting(false);
+                          }
+                        }
+                      }}
+                      disabled={deleting}
+                      className="px-6 py-2.5 bg-red-500/10 border border-red-500/20 text-red-600 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-red-500 hover:text-white transition-colors focus:ring-2 focus:ring-red-500/50 outline-none disabled:opacity-50"
+                    >
+                      {deleting ? "Eliminando..." : "Eliminar Mi Cuenta"}
                     </button>
                   </div>
                 </div>

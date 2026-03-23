@@ -31,6 +31,60 @@ export default function AdminEndpointsPage() {
       path: "/api/admin/communities",
       description: "Retorna todas las comunidades e incluye joins a perfiles creadores con avatar.",
       body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/private/me",
+      description: "Retorna los datos de sesión y perfil del usuario autenticado.",
+      body: "N/A"
+    },
+    {
+      method: "POST",
+      path: "/api/private/me",
+      description: "Upsert (actualiza o inserta) información general del perfil del usuario (nombre, biografía, etc).",
+      body: "{ first_name, last_name, biography, website, avatar_url }"
+    },
+    {
+      method: "PUT",
+      path: "/api/private/security",
+      description: "Actualiza la contraseña global del usuario autenticado utilizando bypass admin auth.",
+      body: "{ password }"
+    },
+    {
+      method: "DELETE",
+      path: "/api/private/security",
+      description: "Elimina permanentemente al usuario del sistema (Auth y DB en cascada).",
+      body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/private/chat",
+      description: "Devuelve los mensajes directos o chats del usuario en sesión.",
+      body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/private/notifications",
+      description: "Retorna la lista de notificaciones recientes no leídas/leídas del usuario.",
+      body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/private/my-communities",
+      description: "Devuelve el resumen de las comunidades a las que pertenece el usuario autenticado.",
+      body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/private/feed",
+      description: "Devuelve el contenido y posts del feed del usuario de forma paginada.",
+      body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/public/events",
+      description: "Retorna todos los eventos públicos del calendario evadiendo reglas de fila (RLS) para display abierto.",
+      body: "N/A"
     }
   ];
 
