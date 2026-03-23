@@ -6,43 +6,33 @@ import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
 
+import { useEffect, useState } from "react";
+
 export default function MyCommunitiesPage() {
   const router = useRouter();
-  const myCommunities = [
-    {
-      id: "c1",
-      slug: "saas-builders-elite",
-      title: "SaaS Builders Elite",
-      role: "Miembro Premium",
-      type: "Paga",
-      members: "12k",
-      image: "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-      creatorAvatar: "https://i.pravatar.cc/150?u=creator",
-      progress: 65,
-    },
-    {
-      id: "c2",
-      slug: "react-native-masters",
-      title: "React Native Masters",
-      role: "Estudiante",
-      type: "Gratis",
-      members: "5k",
-      image: "https://media.giphy.com/media/l41lFw057lAJQMwg0/giphy.gif",
-      creatorAvatar: "https://i.pravatar.cc/150?u=react",
-      progress: 12,
-    },
-    {
-      id: "c3",
-      slug: "ui-design-hackers",
-      title: "UI Design Hackers",
-      role: "Colaborador",
-      type: "Gratis",
-      members: "28k",
-      image: "https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif",
-      creatorAvatar: "https://i.pravatar.cc/150?u=design",
-      progress: 100,
+  const [myCommunities, setMyCommunities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadComms() {
+       try {
+           const res = await fetch("/api/private/my-communities");
+           if (res.status === 401) {
+              router.push('/login');
+              return;
+           }
+           if (res.ok) {
+              const data = await res.json();
+              setMyCommunities(data.communities || []);
+           }
+       } catch (e) {
+           console.error(e);
+       } finally {
+           setLoading(false);
+       }
     }
-  ];
+    loadComms();
+  }, [router]);
 
   return (
     <>
@@ -69,24 +59,37 @@ export default function MyCommunitiesPage() {
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {myCommunities.map((community) => (
+            {loading ? (
+               <div className="col-span-full min-h-[300px] flex items-center justify-center">
+                  <span className="material-symbols-outlined animate-spin text-primary text-4xl">refresh</span>
+               </div>
+            ) : myCommunities.length === 0 ? (
+               <div className="col-span-full text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
+                  <span className="material-symbols-outlined text-4xl text-outline-variant mb-4">group_off</span>
+                  <p className="text-on-surface-variant font-medium mb-4">Aún no eres miembro de ninguna comunidad.</p>
+                  <Link href="/">
+                    <button className="px-6 py-2 bg-on-surface text-surface rounded-full font-bold">Explorar Ecosistemas</button>
+                  </Link>
+               </div>
+            ) : (
+            myCommunities.map((community) => (
               <div
-                onClick={() => router.push(`/c/${community.slug}`)}
+                onClick={() => router.push(`/c/${community.id}`)}
                 key={community.id}
                 className="bg-surface-container-lowest border border-outline-variant/20 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col cursor-pointer"
               >
                 <div className="relative">
                   <div className="h-40 bg-surface-container-highest overflow-hidden relative">
                     <img
-                      alt={community.title}
+                      alt={community.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-                      src={community.image}
+                      src={community.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(community.name)}&size=300`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                   </div>
                   
                   <div className="absolute top-4 right-4 z-10">
-                     {community.type === 'Paga' && (
+                     {community.price_tier === 'Pago' && (
                        <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border-2 border-amber-500 text-amber-500 bg-amber-500/10 shadow-sm backdrop-blur-md">
                           Comunidad Paga
                        </span>
@@ -101,10 +104,10 @@ export default function MyCommunitiesPage() {
                        }}
                        className="relative cursor-pointer hover:scale-105 transition-transform"
                     >
-                       <div className={`w-16 h-16 rounded-full border-[4px] bg-surface-container overflow-hidden shadow-md ${community.type === 'Paga' ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
-                         <img src={community.creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
+                       <div className={`w-16 h-16 rounded-full border-[4px] bg-surface-container overflow-hidden shadow-md ${community.price_tier === 'Pago' ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
+                         <img src={`https://i.pravatar.cc/150?u=${community.id}`} alt="Creator" className="w-full h-full object-cover" />
                        </div>
-                       {community.type === 'Paga' && (
+                       {community.price_tier === 'Pago' && (
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[7px] font-black uppercase tracking-widest px-2 py-[1px] rounded-full shadow border-2 border-surface-container-lowest whitespace-nowrap z-20">
                              Elite
                           </div>
@@ -115,24 +118,25 @@ export default function MyCommunitiesPage() {
                 
                 <div className="p-8 pt-10 flex flex-col flex-1">
                   <h3 className="font-extrabold text-xl text-on-surface mb-6 leading-tight group-hover:text-primary transition-colors line-clamp-2 mt-2">
-                    {community.title}
+                    {community.name}
                   </h3>
                   
                   <div className="mt-auto">
                      <div className="flex justify-between items-end mb-2">
                         <span className="text-xs font-bold text-on-surface-variant">Progreso de Aulas</span>
-                        <span className="text-xs font-black text-on-surface">{community.progress}%</span>
+                        <span className="text-xs font-black text-on-surface">0%</span>
                      </div>
                      <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
                         <div 
-                           className={`h-full rounded-full transition-all duration-1000 ${community.progress === 100 ? 'bg-green-500' : 'bg-primary'}`}
-                           style={{ width: `${community.progress}%` }}
+                           className={`h-full rounded-full transition-all duration-1000 bg-primary`}
+                           style={{ width: `0%` }}
                         ></div>
                      </div>
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
 
         </div>

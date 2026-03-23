@@ -46,7 +46,8 @@ export default function CalendarPage() {
           if (eventsRes.ok) {
              const data = await eventsRes.json();
              const mapped = data.events.map((e: any) => {
-                const parts = e.event_date.split('-'); // e.g. YYYY-MM-DD
+                const dateOnlyStr = e.event_date.split('T')[0];
+                const parts = dateOnlyStr.split('-'); // e.g. YYYY-MM-DD
                 let eYear = 2026, eMonth = 3, eDate = 15;
                 if (parts.length === 3) {
                    eYear = parseInt(parts[0], 10);
