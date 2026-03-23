@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
+import { supabaseClient } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 type CalendarEvent = {
   id: string;
   date: number; // Day of the month
@@ -15,6 +17,8 @@ type CalendarEvent = {
   attendees: number;
   description: string;
   creator: string;
+  creator_username?: string;
+  community_title?: string;
   is_mine?: boolean;
 };
 
@@ -28,13 +32,15 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [apiEvents, setApiEvents] = useState<CalendarEvent[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     async function loadEvents() {
        try {
+          const { data: { session } } = await supabaseClient.auth.getSession();
           const [myCommsRes, eventsRes] = await Promise.all([
-              fetch('/api/private/my-communities'),
-              fetch('/api/public/events')
+              fetch('/api/private/my-communities', { cache: 'no-store', headers: session ? { Authorization: `Bearer ${session.access_token}` } : {} }),
+              fetch('/api/public/events', { cache: 'no-store' })
           ]);
           
           let myCommunityIds: string[] = [];
@@ -65,6 +71,8 @@ export default function CalendarPage() {
                    attendees: Math.floor(Math.random() * 50) + 10,
                    description: e.description || "Un evento increíble público.",
                    creator: e.creator?.full_name || "Comunidad",
+                   creator_username: e.creator?.username || "creador",
+                   community_title: e.community?.title || "Comunidad",
                    is_mine: myCommunityIds.includes(e.community_id)
                 };
              });
@@ -215,7 +223,11 @@ export default function CalendarPage() {
                 </div>
               ) : (
                 selectedEvents.map((evt) => (
-                  <article key={evt.id} className={`bg-surface-container-lowest border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group cursor-pointer ${evt.is_mine ? 'border-primary/50 bg-primary/5' : 'border-outline-variant/20 hover:border-primary/30'}`}>
+                  <article 
+                    onClick={() => router.push(`/c/${(evt.community_title || "comunidad").toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
+                    key={evt.id} 
+                    className={`bg-surface-container-lowest border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group cursor-pointer ${evt.is_mine ? 'border-primary/50 bg-primary/5' : 'border-outline-variant/20 hover:border-primary/30'}`}
+                  >
                     <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${evt.type === 'Taller' ? 'bg-amber-500' : evt.type === 'Reunión' ? 'bg-green-500' : 'bg-purple-500'}`}></div>
                     
                     <div className="flex items-center justify-between mb-3">
@@ -239,14 +251,22 @@ export default function CalendarPage() {
                       {evt.time}
                     </p>
                     
-                    <p className="text-sm text-on-surface-variant leading-relaxed mb-5">
+                    <p className="text-sm text-on-surface-variant leading-relaxed mb-5 line-clamp-2">
                       {evt.description}
                     </p>
 
                     <div className="flex items-center justify-between pt-4 border-t border-outline-variant/10">
-                      <div className="flex items-center gap-2">
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (evt.creator_username) {
+                            router.push(`/creator/${evt.creator_username}`);
+                          }
+                        }}
+                        className="flex items-center gap-2 group/creator hover:bg-surface-container-high px-2 py-1 -ml-2 rounded-lg transition-colors cursor-pointer"
+                      >
                         <img className="w-7 h-7 rounded-full border border-outline-variant/30" src={`https://i.pravatar.cc/150?u=${evt.creator}`} alt={evt.creator} />
-                        <span className="text-xs font-bold text-on-surface tracking-wide">{evt.creator}</span>
+                        <span className="text-xs font-bold text-on-surface tracking-wide group-hover/creator:text-primary">{evt.creator}</span>
                       </div>
                       <div className="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-full text-[10px] font-bold text-on-surface-variant">
                          <span className="material-symbols-outlined text-[12px]">group</span>
