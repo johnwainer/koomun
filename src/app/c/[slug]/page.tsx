@@ -18,7 +18,9 @@ export default function CommunityLandingPage() {
 
   const [community, setCommunity] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
+  const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState(false);
   const [accessError, setAccessError] = useState(false);
 
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function CommunityLandingPage() {
               const data = await res.json();
               setCommunity(data.community);
               setEvents(data.events || []);
+              setIsMember(data.isMember || false);
            }
         } catch(e) {
            console.error(e);
@@ -67,9 +70,9 @@ export default function CommunityLandingPage() {
          <SideNavBar />
          <main className="lg:ml-64 pt-16 bg-surface min-h-screen flex flex-col">
             <AccessMessage 
-               type="private" 
-               title="Acceso Privado" 
-               description="Debes iniciar sesión y ser miembro activo para acceder al interior de esta comunidad." 
+               type="unauthorized" 
+               title="Debes iniciar sesión" 
+               description="Inicia sesión o regístrate para visualizar esta comunidad y unirte a ella." 
                icon="lock" 
             />
          </main>
@@ -77,6 +80,33 @@ export default function CommunityLandingPage() {
        </>
      );
   }
+
+  const handleJoin = async () => {
+     if (isMember) {
+        router.push('/dashboard');
+        return;
+     }
+
+     setJoining(true);
+     try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const res = await fetch(`/api/private/communities/${slug}`, {
+           method: "POST",
+           headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+        });
+        if (res.ok) {
+           router.push('/dashboard');
+        } else {
+           const err = await res.json();
+           console.error("Join Error:", err);
+           alert("Hubo un error al intentar unir a la comunidad.");
+        }
+     } catch(e) {
+        console.error(e);
+     } finally {
+        setJoining(false);
+     }
+  };
 
   if (!community) return null;
 
@@ -253,11 +283,12 @@ export default function CommunityLandingPage() {
                        <li className="flex items-center gap-3"><span className={`material-symbols-outlined text-[18px] ${isPaid ? 'text-amber-500' : 'text-green-500'}`}>check_circle</span> Q&A Soporte Privado</li>
                     </ul>
 
-                    <Link href="/dashboard" className="w-full mt-2">
-                       <button className={`w-full py-4 rounded-full font-extrabold shadow-lg transition-transform hover:-translate-y-0.5 active:scale-95 ${isPaid ? 'bg-amber-500 text-amber-950 shadow-amber-500/20 hover:bg-amber-400' : 'bg-primary text-white hover:bg-primary-container shadow-primary/20'}`}>
-                          {isPaid ? 'Desbloquear Acceso' : 'Unirse Gratis Ahora'}
-                       </button>
-                    </Link>
+                    <button 
+                       onClick={handleJoin}
+                       disabled={joining}
+                       className={`w-full mt-2 py-4 rounded-full font-extrabold shadow-lg transition-transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isPaid && !isMember ? 'bg-amber-500 text-amber-950 shadow-amber-500/20 hover:bg-amber-400' : 'bg-primary text-white hover:bg-primary-container shadow-primary/20'}`}>
+                       {joining ? 'Procesando...' : isMember ? 'Ir al Dashboard' : isPaid ? 'Desbloquear Acceso' : 'Unirse Gratis Ahora'}
+                    </button>
                     
                  </div>
               </div>
@@ -268,11 +299,12 @@ export default function CommunityLandingPage() {
 
       {/* Floating Mobile Join Button */}
       <div className="lg:hidden fixed bottom-16 left-0 right-0 p-4 bg-surface border-t border-outline-variant/10 z-40">
-          <Link href="/dashboard" className="w-full">
-            <button className={`w-full py-3.5 rounded-full text-base font-extrabold shadow-xl active:scale-95 ${isPaid ? 'bg-amber-500 text-amber-950 shadow-amber-500/30' : 'bg-primary text-white shadow-primary/30'}`}>
-               Unirse por {price}
-            </button>
-         </Link>
+           <button 
+                onClick={handleJoin}
+                disabled={joining}
+                className={`w-full py-3.5 rounded-full text-base font-extrabold shadow-xl active:scale-95 disabled:opacity-50 ${isPaid && !isMember ? 'bg-amber-500 text-amber-950 shadow-amber-500/30' : 'bg-primary text-white shadow-primary/30'}`}>
+                {joining ? 'Procesando...' : isMember ? 'Ir al Dashboard' : isPaid ? `Unirse por ${price}` : 'Unirse Gratis'}
+             </button>
       </div>
 
       <BottomNavBar />
