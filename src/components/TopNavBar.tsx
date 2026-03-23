@@ -1,0 +1,107 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+export default function TopNavBar() {
+  const pathname = usePathname();
+
+  return (
+    <header className="fixed top-0 w-full z-50 bg-[#faf9f7] backdrop-blur-xl bg-opacity-80 border-b border-outline-variant/10">
+      <div className="flex items-center justify-between px-8 h-16 w-full font-medium">
+        <div className="flex items-center gap-8">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+              <span className="material-symbols-outlined text-lg">auto_awesome</span>
+            </div>
+            <span className="text-xl font-bold text-[#1a1c1b] tracking-tighter">
+              Koomun
+            </span>
+          </Link>
+          <div className="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full w-80">
+            <span className="material-symbols-outlined text-outline text-sm mr-2">
+              search
+            </span>
+            <input
+              className="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-on-surface-variant/50 outline-none"
+              placeholder="Buscar comunidades..."
+              type="text"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-6 mr-4">
+            <Link
+              href="/creators"
+              className={`text-xs font-black uppercase tracking-widest transition-all duration-300 px-3.5 py-1.5 rounded-full border flex items-center gap-1 ${
+                pathname === "/creators" || pathname === "/leaderboard"
+                  ? "bg-primary/10 text-primary border-primary/30 shadow-sm"
+                  : "bg-transparent border-transparent text-on-surface-variant hover:text-primary hover:bg-surface-container/50"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[14px]">workspace_premium</span>
+              Creadores
+            </Link>
+            <Link
+              href="/"
+              className={`font-semibold transition-colors duration-200 px-3 py-1 rounded-lg ${
+                pathname === "/"
+                  ? "text-on-surface bg-surface-container-high"
+                  : "text-on-surface-variant font-normal hover:bg-surface-container-low"
+              }`}
+            >
+              Explorar
+            </Link>
+            <Link
+              href="/categories"
+              className={`font-semibold transition-colors duration-200 px-3 py-1 rounded-lg ${
+                pathname === "/categories"
+                  ? "text-on-surface bg-surface-container-high"
+                  : "text-on-surface-variant font-normal hover:bg-surface-container-low"
+              }`}
+            >
+              Categorías
+            </Link>
+            <Link
+              href="/trending"
+              className={`font-semibold transition-colors duration-200 px-3 py-1 rounded-lg ${
+                pathname === "/trending"
+                  ? "text-on-surface bg-surface-container-high"
+                  : "text-on-surface-variant font-normal hover:bg-surface-container-low"
+              }`}
+            >
+              Tendencias
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link 
+              href="/notifications" 
+              className={`p-2 rounded-full transition-colors relative ${
+                pathname === "/notifications" ? "bg-surface-container-high text-primary" : "text-on-surface-variant hover:bg-[#f4f3f1] active:scale-95"
+              }`}
+            >
+              <span className="material-symbols-outlined">notifications</span>
+              {pathname !== "/notifications" && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-surface-container-lowest"></span>}
+            </Link>
+            <Link 
+              href="/chat" 
+              className={`p-2 rounded-full transition-colors relative ${
+                pathname === "/chat" ? "bg-surface-container-high text-primary" : "text-on-surface-variant hover:bg-[#f4f3f1] active:scale-95"
+              }`}
+            >
+              <span className="material-symbols-outlined">chat_bubble</span>
+              {pathname !== "/chat" && <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border border-surface-container-lowest"></span>}
+            </Link>
+            <Link
+              href="/profile"
+              className="flex items-center justify-center w-10 h-10 rounded-full border border-outline-variant/20 hover:border-primary/50 transition-colors overflow-hidden shrink-0 ml-2"
+              title="Mi Perfil"
+            >
+              <img src="https://i.pravatar.cc/150?u=current_user" alt="Avatar" className="w-full h-full object-cover" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

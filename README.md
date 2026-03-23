@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Koomun 🚀
 
-## Getting Started
+> **The Next-Gen Community & Monetization Platform for Elite Creators**
 
-First, run the development server:
+Koomun is a modern, blazing-fast, and premium ecosystem built exclusively for creators to monetize, engage, and scale their digital products, communities, and events without relying on fragmented tools. Designed with an ultra-sleek, *Apple-inspired* minimalist UI, Koomun prioritizes aesthetics, conversion rates, and seamless mobile-first user experiences.
+
+---
+
+## 🌟 Core Features
+
+### 1. **Discover & Marketplaces**
+- **Trending & Categories:** Algorithmically curated marketplaces for digital goods, newsletters, and communities.
+- **Micro-Animations & Visuals:** Rich gradients, dynamic floating elements, and Giphy-powered cover integrations that increase click-through rates by up to +300% (exclusive to the Elite plan).
+
+### 2. **Koomun Studio (The Creator Dashboard)**
+- **Unified Analytics:** Real-time MRR, member retention, churn predictions, and engagement stats.
+- **Content Manager:** An intuitive Drag-and-Drop builder to host native videos, embed external platforms (YouTube/Vimeo), and safely upload encrypted PDFs with Anti-Download protections.
+- **Event Management (Elite):** Schedule virtual (Zoom/Meet links) or physical (Address locators) events seamlessly.
+- **Access Controls:** Granular gating for Free Previews, Premium inclusions, and Special One-Time Paywalls per content block.
+
+### 3. **Immersive Social Layer**
+- **Community Feed:** A Twitter-like ecosystem within your paid community. Threads, rich media uploads, polls, pinned announcements, and deep threaded replies.
+- **Leaderboards:** Gamification engine to rank your most engaging community members and keep retention sky-high.
+- **Direct Messaging (Chat):** A sleek, fully-responsive 1-1 messenger with online statuses and exact sync across devices.
+
+### 4. **Learning Experience (Classroom)**
+- **Distraction-Free Classroom View:** Complete course immersion taking cues from modern IDE layouts, featuring dark/light contrasts, persistent progress tracking, and secure video/document viewers.
+- **Download Protection:** Built-in PDF security guards and watermarks to prevent piracy.
+
+### 5. **Monetization & Billing**
+- **1-Click Checkout:** Saved payment methods, credit card management inside player profiles, and instant gateway processing.
+- **Authority Custom Domains:** Connect your `www.tumarca.com` exclusively through Koomun edge servers for zero latency.
+
+---
+
+## 💻 Tech Stack & Architecture
+
+- **Framework**: `Next.js 15+` (App Router)
+- **Language**: `TypeScript` (Strict typings across forms and API scopes)
+- **Styling**: `Tailwind CSS 3.4` (Custom design system relying strictly on modern variables `--surface`, `--primary`, `--outline-variant`)
+- **Icons**: `Material Symbols Outlined`
+- **Responsive Strategies**: `Mobile-First Approach` utilizing flex-wrap, dynamic truncations (`min-w-0 flex-1`), master-detail viewport switching for Chats, and native bottom nav-bars for iOS/Android Safari web-apps.
+
+---
+
+## 🛠 Instalación y Configuración
 
 ```bash
+# 1. Clonar el repositorio
+git clone https://github.com/johnwainer/koomun.git
+
+# 2. Instalar dependencias
+npm install 
+# o si usas yarn/bun
+yarn install
+
+# 3. Levantar entorno de desarrollo interactivo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# 4. Servidor inicializará en:
+# http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **Autores & Contribuciones:**  
+> Versión 1.0 Estable (Lanzamiento inicial de arquitectura). Creada con esfuerzo, optimizada por John Wainer (`johnwainer@gmail.com`) y Koomun Core Team. 
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+![Koomun Banner](https://i.ibb.co/3s4K3QK/koomun-cover.jpg)
