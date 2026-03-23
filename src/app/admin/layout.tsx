@@ -1,4 +1,62 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { supabaseClient } from "@/lib/supabase";
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    async function checkSuperAdmin() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      
+      if (!session) {
+        setIsAdmin(false);
+        router.replace("/login");
+        return;
+      }
+
+      // Validar si el email es el del super admin
+      if (session.user.email === "johnwainer@gmail.com") {
+        setIsAdmin(true);
+      } else {
+        // Consultar su perfil para ver si tiene rol super_admin manual
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+          
+        if (profile?.role === "super_admin") {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+          router.replace("/dashboard");
+        }
+      }
+    }
+
+    checkSuperAdmin();
+  }, [router]);
+
+  if (isAdmin === null) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#faf9f7]">
+        <span className="material-symbols-outlined animate-spin text-primary text-4xl">sync</span>
+      </div>
+    );
+  }
+
+  // Helper para pintar el menú activo
+  const getNavClass = (path: string) => {
+    return pathname === path 
+     ? "flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-high text-primary font-bold shadow-sm transition-colors"
+     : "flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-medium";
+  };
+
   return (
     <div className="flex h-screen bg-[#faf9f7] text-[#1a1c1b]">
       {/* Sidebar Admin (Very clean & minimal) */}
@@ -11,22 +69,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         
         <nav className="flex-1 p-4 flex flex-col gap-2">
-          <a href="/admin" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-container-high text-primary font-bold shadow-sm">
+          <Link href="/admin" className={getNavClass('/admin')}>
             <span className="material-symbols-outlined text-xl">group</span>
             Usuarios & Creadores
-          </a>
-          <a href="/admin/content" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-medium">
+          </Link>
+          <Link href="/admin/content" className={getNavClass('/admin/content')}>
             <span className="material-symbols-outlined text-xl">dataset</span>
             Gestor Contenidos
-          </a>
-          <a href="/admin/finance" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-medium">
-            <span className="material-symbols-outlined text-xl">monitoring</span>
-            Ingresos (MRR)
-          </a>
-          <a href="/admin/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-medium">
-            <span className="material-symbols-outlined text-xl">build_circle</span>
-            Plataforma
-          </a>
+          </Link>
+          <Link href="/admin/endpoints" className={getNavClass('/admin/endpoints')}>
+            <span className="material-symbols-outlined text-xl">api</span>
+            API Endpoints
+          </Link>
         </nav>
         
         <footer className="p-4 border-t border-outline-variant/10 text-xs text-on-surface-variant text-center font-medium">

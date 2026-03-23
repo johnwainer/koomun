@@ -103,9 +103,38 @@ export default function AdminPage() {
                        <span className="text-[10px] text-outline-variant mt-1 font-mono">{u.id}</span>
                     </td>
                     <td className="p-4">
-                       <span className={`px-3 py-1 text-[11px] font-black uppercase rounded-full ${u.role === 'creator' ? 'bg-primary/20 text-primary' : 'bg-zinc-200 text-zinc-600'}`}>
-                         {u.role}
-                       </span>
+                       <select 
+                         value={u.role}
+                         onChange={async (e) => {
+                           const newRole = e.target.value;
+                           const confirmed = window.confirm(`¿Cambiar rol de ${u.email} a ${newRole}?`);
+                           if (!confirmed) return;
+                           
+                           try {
+                             const r = await fetch('/api/admin/users/role', {
+                               method: 'PUT',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ userId: u.id, newRole })
+                             });
+                             if (r.ok) {
+                               setUsers(users.map(user => user.id === u.id ? { ...user, role: newRole } : user));
+                             } else {
+                               alert("Error actualizando rol");
+                             }
+                           } catch (err) {
+                             alert("Error de conexión");
+                           }
+                         }}
+                         className={`px-3 py-1 text-[11px] font-black uppercase rounded-full cursor-pointer outline-none appearance-none ${
+                           u.role === 'super_admin' ? 'bg-red-500/20 text-red-700' :
+                           u.role === 'creator' ? 'bg-primary/20 text-primary' : 
+                           'bg-zinc-200 text-zinc-600'
+                         }`}
+                       >
+                         <option value="user">Usuario</option>
+                         <option value="creator">Creador</option>
+                         <option value="super_admin">Super Admin</option>
+                       </select>
                     </td>
                     <td className="p-4 text-xs font-black uppercase">
                        {u.plan === 'elite' ? <span className="text-amber-600 flex items-center gap-1"><span className="material-symbols-outlined text-xs">workspace_premium</span> ELITE</span> : u.plan}
