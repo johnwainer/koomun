@@ -4,27 +4,19 @@ import { useState, useEffect } from "react";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
-import CommunitySwitcher from "@/components/CommunitySwitcher";
-
 type CalendarEvent = {
-  id: number;
+  id: string;
   date: number; // Day of the month
+  month: number;
+  year: number;
   type: string;
   title: string;
   time: string;
   attendees: number;
   description: string;
   creator: string;
+  is_mine?: boolean;
 };
-
-// Generamos algunos mock eventos para este mes dinámico
-const mockEvents: CalendarEvent[] = [
-  { id: 1, date: 5, type: "Taller", title: "Diseño de Interfaces Web 3.0", time: "10:00 AM - 12:00 PM EST", attendees: 45, description: "Taller interactivo para crear layouts modernos con enfoque B2B SaaS.", creator: "Andrés L." },
-  { id: 2, date: 12, type: "Reunión", title: "Review de Proyectos", time: "4:00 PM - 5:30 PM EST", attendees: 120, description: "Revisaremos en vivo los proyectos de la comunidad.", creator: "Valeria M." },
-  { id: 3, date: 18, type: "Q&A", title: "Preguntas y Respuestas Mensual", time: "1:00 PM - 2:00 PM EST", attendees: 85, description: "Trae tus preguntas sobre cómo escalar una agencia de diseño a 10k MRR.", creator: "Marcos T." },
-  { id: 4, date: 22, type: "Taller", title: "Sistemas de Diseño B2B", time: "11:00 AM - 1:00 PM EST", attendees: 210, description: "Aprende a estructurar un sistema de diseño robusto para tu software empresarial.", creator: "Andrés L." },
-  { id: 5, date: 28, type: "Networking", title: "Speed Networking", time: "6:00 PM - 7:00 PM EST", attendees: 60, description: "Dinámicas de conexiones rápidas para conocer a otros creadores y hacer dupla.", creator: "Sistema" }
-];
 
 const MONTH_NAMES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -35,10 +27,56 @@ export default function CalendarPage() {
   const [mounted, setMounted] = useState(false);
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [apiEvents, setApiEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
-    // Al montar en cliente, seteamos la fecha (Ej: 22 de marzo 2026 según el sistema de prueba)
-    const today = new Date("2026-03-22T12:00:00");
+    async function loadEvents() {
+       try {
+          const [myCommsRes, eventsRes] = await Promise.all([
+              fetch('/api/private/my-communities'),
+              fetch('/api/public/events')
+          ]);
+          
+          let myCommunityIds: string[] = [];
+          if (myCommsRes.ok) {
+             const commsData = await myCommsRes.json();
+             myCommunityIds = (commsData.communities || []).map((c: any) => c.id);
+          }
+
+          if (eventsRes.ok) {
+             const data = await eventsRes.json();
+             const mapped = data.events.map((e: any) => {
+                const parts = e.event_date.split('-'); // e.g. YYYY-MM-DD
+                let eYear = 2026, eMonth = 3, eDate = 15;
+                if (parts.length === 3) {
+                   eYear = parseInt(parts[0], 10);
+                   eMonth = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+                   eDate = parseInt(parts[2], 10);
+                }
+                return {
+                   id: e.id,
+                   date: eDate,
+                   month: eMonth,
+                   year: eYear,
+                   type: e.type.includes('Virtual') ? 'Taller' : 'Reunión', // Mock mapping
+                   title: e.title,
+                   time: e.event_time,
+                   attendees: Math.floor(Math.random() * 50) + 10,
+                   description: e.description || "Un evento increíble público.",
+                   creator: e.creator?.full_name || "Comunidad",
+                   is_mine: myCommunityIds.includes(e.community_id)
+                };
+             });
+             setApiEvents(mapped);
+          }
+       } catch (err) {
+          console.error(err);
+       }
+    }
+    loadEvents();
+    
+    // Al montar en cliente, seteamos la fecha (Ej: usando la fecha real)
+    const today = new Date();
     setCurrentDate(today);
     setSelectedDate(today.getDate());
     setMounted(true);
@@ -68,10 +106,12 @@ export default function CalendarPage() {
   const daysInMonthArray = Array.from({ length: daysInMonthTotal }, (_, i) => i + 1);
   const emptyDaysArray = Array.from({ length: emptyOffset }, (_, i) => i);
 
-  // Filtramos los eventos por día (mock)
-  const eventsByDate = mockEvents.reduce((acc, event) => {
-    if (!acc[event.date]) acc[event.date] = [];
-    acc[event.date].push(event);
+  // Filtramos los eventos por día y mes (API)
+  const eventsByDate = apiEvents.reduce((acc, event) => {
+    if (event.month === targetMonth && event.year === targetYear) {
+       if (!acc[event.date]) acc[event.date] = [];
+       acc[event.date].push(event);
+    }
     return acc;
   }, {} as Record<number, CalendarEvent[]>);
 
@@ -85,8 +125,6 @@ export default function CalendarPage() {
       <SideNavBar />
 
       <main className="lg:ml-64 pt-16 pb-20 bg-surface min-h-screen flex flex-col">
-        <CommunitySwitcher maxWidth="max-w-7xl" />
-
         <div className="w-full max-w-7xl mx-auto px-4 lg:px-8 pt-8 flex flex-col lg:grid lg:grid-cols-[1fr_360px] lg:gap-12 gap-8 flex-1 animate-in fade-in duration-300">
           
           <div className="flex flex-col gap-6">
@@ -176,16 +214,21 @@ export default function CalendarPage() {
                 </div>
               ) : (
                 selectedEvents.map((evt) => (
-                  <article key={evt.id} className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group cursor-pointer hover:border-primary/30">
+                  <article key={evt.id} className={`bg-surface-container-lowest border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group cursor-pointer ${evt.is_mine ? 'border-primary/50 bg-primary/5' : 'border-outline-variant/20 hover:border-primary/30'}`}>
                     <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${evt.type === 'Taller' ? 'bg-amber-500' : evt.type === 'Reunión' ? 'bg-green-500' : 'bg-purple-500'}`}></div>
                     
                     <div className="flex items-center justify-between mb-3">
-                       <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md flex items-center gap-1.5 border ${
-                         evt.type === 'Taller' ? 'bg-amber-50 text-amber-700 border-amber-200' : evt.type === 'Reunión' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200'
-                       }`}>
-                         <span className="material-symbols-outlined text-[12px]">{evt.type === 'Taller' ? 'design_services' : evt.type === 'Reunión' ? 'groups' : 'chat'}</span>
-                         {evt.type}
-                       </span>
+                       <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md flex items-center gap-1.5 border ${
+                            evt.type === 'Taller' ? 'bg-amber-50 text-amber-700 border-amber-200' : evt.type === 'Reunión' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200'
+                          }`}>
+                            <span className="material-symbols-outlined text-[12px]">{evt.type === 'Taller' ? 'design_services' : evt.type === 'Reunión' ? 'groups' : 'chat'}</span>
+                            {evt.type}
+                          </span>
+                          {evt.is_mine && (
+                             <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-primary text-white flex items-center gap-1 shadow-sm"><span className="material-symbols-outlined text-[10px]">star</span> Tu Comunidad</span>
+                          )}
+                       </div>
                     </div>
 
                     <h3 className="font-extrabold text-on-surface text-lg leading-tight mb-2 group-hover:text-primary transition-colors">{evt.title}</h3>

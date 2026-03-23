@@ -5,7 +5,7 @@ import Link from "next/link";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
-import CommunitySwitcher, { myCommunities, MyCommunity } from "@/components/CommunitySwitcher";
+import CommunitySwitcher, { MyCommunity } from "@/components/CommunitySwitcher";
 
 // --- Tipos de Datos ---
 type Course = {
@@ -33,96 +33,57 @@ type Module = {
   lessons: Lesson[];
 };
 
-// --- Mock Data ---
-const mockCourses: Course[] = [
-  {
-    id: "cr1",
-    title: "Diseño UI Avanzado para SaaS",
-    description: "Domina design tokens, variables y auto-layout ninja en Figma.",
-    image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=800",
-    progress: 32,
-    author: "Elena Rossi"
-  },
-  {
-    id: "cr2",
-    title: "Ingeniería de Prompts",
-    description: "Crea sistemas y prompts modulares para IA generativa.",
-    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800",
-    progress: 0,
-    author: "Carlos Mendoza"
-  },
-  {
-    id: "cr3",
-    title: "Ventas B2B Outbound",
-    description: "Estrategias de cold-email y prospección corporativa.",
-    image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=800",
-    progress: 100,
-    author: "Andrés L."
-  }
-];
-
-const mockModules: Module[] = [
-  {
-    id: "m1",
-    title: "1. Fundamentos del Programa",
-    lessons: [
-      {
-        id: "l1-1",
-        title: "Youtube Demo",
-        duration: "12:45",
-        completed: true,
-        type: "youtube",
-        videoUrl: "M7lc1UVf-VE", // YouTube Test Video
-        description: "En esta primera lección aprenderás a estructurar design tokens y variables en Figma desde cero para mantener consistencia en tus proyectos. Carga nativa desde YouTube sin distracciones."
-      },
-      {
-        id: "l1-2",
-        title: "Vimeo High-Res Demo",
-        duration: "18:20",
-        completed: false,
-        type: "vimeo",
-        videoUrl: "76979871", // Vimeo Test Video
-        description: "Reglas de oro para crear jerarquías formales accesibles. Reproducible directamente desde el player propietario de Vimeo para evitar descargas maliciosas."
-      },
-      {
-        id: "l1-3",
-        title: "Manual de Estructura (Guía PDF)",
-        duration: "Lectura",
-        completed: false,
-        type: "pdf",
-        description: "Documento oficial con las reglas de proporción áurea para crear jerarquías accesibles."
-      }
-    ]
-  },
-  {
-    id: "m2",
-    title: "2. Módulos Avanzados",
-    lessons: [
-      {
-        id: "l2-1",
-        title: "Auto Layout Pro y Grid",
-        duration: "45:00",
-        completed: false,
-        type: "youtube",
-        videoUrl: "dQw4w9WgXcQ",
-        description: "Técnicas ninja de Auto Layout para componentes y contenedores responsivos a nivel pixel-perfect."
-      }
-    ]
-  }
-];
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function ClassroomPage() {
-  const [activeCommunity, setActiveCommunity] = useState<MyCommunity>(myCommunities[0]);
+  const router = useRouter();
+  const [activeCommunity, setActiveCommunity] = useState<MyCommunity | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
   
-  const [activeModuleId, setActiveModuleId] = useState<string>("m1");
-  const [activeLesson, setActiveLesson] = useState<Lesson>(mockModules[0].lessons[0]);
+  const [activeModuleId, setActiveModuleId] = useState<string>("");
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [accessState, setAccessState] = useState<"pending" | "success" | "unauthorized" | "empty">("pending");
 
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [savedCards, setSavedCards] = useState<{last4: string; brand: string}[]>([{ last4: '4242', brand: 'Visa' }]);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [newCardInput, setNewCardInput] = useState("");
   const [showAddCard, setShowAddCard] = useState(savedCards.length === 0);
+
+  useEffect(() => {
+    async function loadLibrary() {
+      if (!activeCommunity || accessState !== "success") return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/private/library?communityId=${activeCommunity.id}`);
+        if (res.status === 401) {
+           router.push('/login');
+           return;
+        }
+        if (res.ok) {
+           const data = await res.json();
+           const mappedCourses = (data.library || []).map((mod: any) => ({
+             id: mod.id,
+             title: mod.title,
+             description: mod.description || 'Sin descripción',
+             image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=800",
+             progress: 0,
+             author: activeCommunity.name,
+             items: mod.items
+           }));
+           setCourses(mappedCourses);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadLibrary();
+  }, [activeCommunity, accessState, router]);
 
   const handle1ClickPay = () => {
      setIsProcessingPayment(true);
@@ -142,12 +103,9 @@ export default function ClassroomPage() {
   };
 
   // Lógica local para simular la vista
-  const totalLessons = mockModules.reduce((acc, mod) => acc + mod.lessons.length, 0);
-  const completedLessons = mockModules.reduce(
-    (acc, mod) => acc + mod.lessons.filter(l => l.completed).length,
-    0
-  );
-  const activeCourseProgress = Math.round((completedLessons / totalLessons) * 100);
+  const totalLessons = 0;
+  const completedLessons = 0;
+  const activeCourseProgress = 0;
 
   const handleCommunityChange = (c: MyCommunity) => {
      setActiveCommunity(c);
@@ -162,22 +120,63 @@ export default function ClassroomPage() {
       <main className="lg:ml-64 pt-16 px-0 sm:px-4 lg:px-8 pb-20 min-h-screen bg-surface flex flex-col relative">
         <CommunitySwitcher 
           maxWidth="max-w-7xl" 
-          activeId={activeCommunity.id} 
+          activeId={activeCommunity?.id} 
           onChange={handleCommunityChange} 
+          onLoad={(_, s) => setAccessState(s)} 
         />
         
-        {!activeCourse ? (
+        {accessState === "unauthorized" && (
+           <div className="max-w-7xl w-full mx-auto p-4 flex-1 flex flex-col items-center justify-center min-h-[500px]">
+              <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-6">
+                 <span className="material-symbols-outlined text-3xl text-outline-variant">lock</span>
+              </div>
+              <h2 className="text-2xl font-black text-on-surface mb-2 tracking-tight">Debes iniciar sesión</h2>
+              <p className="text-on-surface-variant font-medium text-center max-w-sm mb-6">Inicia sesión y obtén el acceso al contenido exclusivo de librerías y programas en tus comunidades.</p>
+              <div className="flex gap-4">
+                 <button onClick={() => router.push('/login')} className="px-6 py-2 bg-primary text-white font-bold rounded-full">Iniciar Sesión</button>
+                 <button onClick={() => router.push('/register')} className="px-6 py-2 bg-surface-container-high text-on-surface font-bold rounded-full border border-outline-variant/20 hover:bg-outline-variant/10">Registrarme</button>
+              </div>
+           </div>
+        )}
+
+        {accessState === "empty" && (
+           <div className="max-w-7xl w-full mx-auto p-4 flex-1 flex flex-col items-center justify-center min-h-[500px]">
+              <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-6 border border-outline-variant/10">
+                 <span className="material-symbols-outlined text-3xl text-outline-variant">menu_book</span>
+              </div>
+              <h2 className="text-2xl font-black text-on-surface mb-2 tracking-tight">Librería Vacía</h2>
+              <p className="text-on-surface-variant font-medium text-center max-w-sm mb-6">Aún no eres miembro de ninguna comunidad para ver sus programas y recursos estructurados de estudio.</p>
+              <button className="px-6 py-2 bg-on-surface text-surface font-bold rounded-full">Explorar Comunidades</button>
+           </div>
+        )}
+
+        {accessState === "pending" && (
+           <div className="min-h-[300px] w-full flex items-center justify-center"><span className="material-symbols-outlined animate-spin text-primary">loader</span></div>
+        )}
+
+        {accessState === "success" && activeCommunity && (!activeCourse ? (
           // Vista: Grilla de Programas
           <div className="max-w-7xl mx-auto w-full mt-8 px-4 lg:px-8 flex-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
              <div className="flex justify-between items-center mb-8 border-b border-outline-variant/10 pb-4">
                 <h1 className="text-3xl font-extrabold text-on-surface">Librería de {activeCommunity.name}</h1>
                 <span className="bg-surface-container-high px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-                   {mockCourses.length} Programas Activos
+                   {courses.length} Programas Activos
                 </span>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10">
-                {mockCourses.map(course => (
+             {loading ? (
+                <div className="text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm flex flex-col items-center">
+                  <span className="material-symbols-outlined text-4xl text-primary animate-spin mb-4">refresh</span>
+                  <p className="text-on-surface-variant font-medium">Sincronizando Librería...</p>
+                </div>
+             ) : courses.length === 0 ? (
+                <div className="text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm flex flex-col items-center">
+                  <span className="material-symbols-outlined text-4xl text-outline-variant mb-4">menu_book</span>
+                  <p className="text-on-surface-variant font-medium">Esta comunidad aún no tiene módulos publicados.</p>
+                </div>
+             ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10">
+                   {courses.map(course => (
                   <article 
                     key={course.id} 
                     onClick={() => setActiveCourse(course)} 
@@ -224,7 +223,8 @@ export default function ClassroomPage() {
                      </div>
                   </article>
                 ))}
-             </div>
+                </div>
+             )}
           </div>
         ) : (
           // Vista: Contenido del Programa Específico
@@ -257,52 +257,54 @@ export default function ClassroomPage() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-4">
-                    {mockModules.map((module) => (
-                      <div key={module.id} className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1">
                         <button 
-                          onClick={() => setActiveModuleId(module.id)}
                           className="flex items-center justify-between w-full text-left p-2 font-bold text-sm text-on-surface hover:text-primary transition-colors outline-none"
                         >
-                          <span className="truncate pr-2">{module.title}</span>
+                          <span className="truncate pr-2">Items ({(activeCourse as any).items?.length || 0})</span>
                           <span className="material-symbols-outlined text-[18px]">
-                            {activeModuleId === module.id ? 'expand_less' : 'expand_more'}
+                            expand_less
                           </span>
                         </button>
                         
-                        {activeModuleId === module.id && (
                           <div className="flex flex-col ml-1 border-l-2 border-surface-container-high py-1 transition-all">
-                            {module.lessons.map((lesson) => (
+                            {((activeCourse as any).items || []).map((lesson: any) => (
                               <button
                                 key={lesson.id}
                                 onClick={() => setActiveLesson(lesson)}
                                 className={`flex items-start gap-3 w-full text-left p-2.5 rounded-lg transition-all outline-none ${
-                                  activeLesson.id === lesson.id
+                                  activeLesson?.id === lesson.id
                                     ? "bg-primary-container/20 text-primary font-bold border-l-4 border-primary ml-[-2px]"
                                     : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface ml-[2px]"
                                 }`}
                               >
                                 <span className={`material-symbols-outlined text-[16px] mt-0.5 ${
-                                  lesson.completed ? "text-green-500" : activeLesson.id === lesson.id ? "text-primary" : "text-outline-variant"
+                                  lesson.completed ? "text-green-500" : activeLesson?.id === lesson.id ? "text-primary" : "text-outline-variant"
                                 }`}>
                                   {lesson.completed ? (lesson.type === 'pdf' ? "task_alt" : "task_alt") : (lesson.type === 'pdf' ? "picture_as_pdf" : "play_circle")}
                                 </span>
                                 <div className="flex flex-col gap-0.5 overflow-hidden">
                                   <span className="text-sm truncate">{lesson.title}</span>
                                   <span className={`text-[10px] uppercase tracking-widest ${
-                                    activeLesson.id === lesson.id ? "text-primary/70" : "text-on-surface-variant/70"
-                                  }`}>{lesson.duration}</span>
+                                    activeLesson?.id === lesson.id ? "text-primary/70" : "text-on-surface-variant/70"
+                                  }`}>{lesson.type || "Elemento"}</span>
                                 </div>
                               </button>
                             ))}
                           </div>
-                        )}
                       </div>
-                    ))}
                   </div>
                 </aside>
 
                 <section className="lg:col-span-9 flex flex-col p-4 lg:p-6 bg-surface-container-lowest lg:rounded-xl shadow-sm border border-outline-variant/10">
                   
+                  {!activeLesson ? (
+                     <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
+                        <span className="material-symbols-outlined text-6xl text-outline-variant/30 mb-4">play_circle</span>
+                        <p className="text-on-surface-variant font-bold uppercase tracking-widest">Selecciona una lección para iniciar</p>
+                     </div>
+                  ) : (
+                  <>
                   {/* Visor Dinámico: YouTube, Vimeo o PDF Bloqueado */}
                   {activeLesson.type === "youtube" ? (
                     <div className="w-full aspect-video bg-black rounded-xl lg:rounded-2xl overflow-hidden shadow-lg">
@@ -395,11 +397,13 @@ export default function ClassroomPage() {
                         </div>
                      </div>
                   </div>
+                  </>
+                  )}
                 </section>
              </div>
 
           </div>
-        )}
+        ))}
 
         {/* Modal Paywall */}
         {showPaywallModal && (

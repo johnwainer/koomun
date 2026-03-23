@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
@@ -18,76 +18,46 @@ type Post = {
   comments: number;
 };
 
-import CommunitySwitcher, { MyCommunity, myCommunities } from "@/components/CommunitySwitcher";
-
-const mockPosts: Record<string, Post[]> = {
-  "c1": [
-    {
-      id: 1,
-      author: "Elena Rossi",
-      avatar: "https://i.pravatar.cc/150?u=elena",
-      time: "Hace 2 horas",
-      type: "Recurso",
-      title: "Framework 2024 para Workshop Design",
-      content: "Acabo de publicar mi guía completa sobre cómo diseñar espacios de aprendizaje que fomentan trabajo profundo y desarrollos creativos. Incluye plantillas de Figma y Notion.",
-      image: "https://picsum.photos/id/112/800/400",
-      likes: 124,
-      comments: 42
-    },
-    {
-      id: 2,
-      author: "Carlos Mendoza",
-      avatar: "https://i.pravatar.cc/150?u=carlos",
-      time: "Hace 5 horas",
-      type: "Preguntas",
-      title: "¿Cuál es su stack actual para crear MVPs rápido?",
-      content: "Estoy por lanzar un nuevo SaaS para agencias de diseño, pero estoy dudando entre usar Next.js + Supabase o irme por algo no-code como Bubble. ¿Qué opinan los que han escalado herramientas similares este año?",
-      likes: 38,
-      comments: 89
-    }
-  ],
-  "c2": [
-    {
-      id: 3,
-      author: "Andrés L.",
-      avatar: "https://i.pravatar.cc/150?u=andres",
-      time: "Ayer",
-      type: "Showcase",
-      title: "Llegamos a $10k MRR",
-      content: "Después de 6 meses de puro bootstrap logramos la marca de los 10k MRR. A continuación dejo el reporte completo de tráfico y CAC.",
-      likes: 532,
-      comments: 112
-    }
-  ],
-  "c3": [
-    {
-      id: 4,
-      author: "Valeria M.",
-      avatar: "https://i.pravatar.cc/150?u=valeria",
-      time: "Ayer",
-      type: "Recurso",
-      title: "Librería de Prompts Maestros para Claude 3",
-      content: "Armé una base de datos en Notion con más de 200 prompts probados bajo diferentes técnicas (Chain of Thought, Roleplaying, etc).",
-      image: "https://picsum.photos/id/132/800/400",
-      likes: 850,
-      comments: 312
-    }
-  ],
-  "c4": [],
-  "c5": []
-};
+import CommunitySwitcher, { MyCommunity } from "@/components/CommunitySwitcher";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  const [activeCommunity, setActiveCommunity] = useState<MyCommunity>(myCommunities[0]);
+  const router = useRouter();
+  const [activeCommunity, setActiveCommunity] = useState<MyCommunity | null>(null);
   const [activeFilter, setActiveFilter] = useState("Todos");
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [accessState, setAccessState] = useState<"pending" | "success" | "unauthorized" | "empty">("pending");
+
+  useEffect(() => {
+    async function loadFeed() {
+      if (!activeCommunity || accessState !== "success") return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/private/feed?communityId=${activeCommunity.id}`);
+        if (res.status === 401) {
+           router.push('/login');
+           return;
+        }
+        if (res.ok) {
+           const data = await res.json();
+           setPosts(data.posts || []);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadFeed();
+  }, [activeCommunity, accessState, router]);
 
   const filters = ["Todos", "Preguntas", "Recursos", "Showcase"];
 
-  const currentPosts = mockPosts[activeCommunity.id] || [];
-  
+  // Placeholder filters implementation since we don't have types on the db model yet
   const filteredPosts = activeFilter === "Todos" 
-    ? currentPosts 
-    : currentPosts.filter((post) => post.type === activeFilter);
+    ? posts 
+    : [];
 
   return (
     <>
@@ -96,9 +66,44 @@ export default function DashboardPage() {
       
       <main className="lg:ml-64 pt-16 pb-20 bg-surface min-h-screen">
         
-        {/* Nav de Mis Comunidades - Usando el componente global */}
-        <CommunitySwitcher maxWidth="max-w-7xl" activeId={activeCommunity.id} onChange={(c) => setActiveCommunity(c)} />
+        {/* Nav de Mis Comunidades */}
+        <CommunitySwitcher 
+           maxWidth="max-w-7xl" 
+           activeId={activeCommunity?.id} 
+           onChange={(c) => setActiveCommunity(c)} 
+           onLoad={(_, s) => setAccessState(s)} 
+        />
 
+        {accessState === "unauthorized" && (
+           <div className="max-w-7xl w-full mx-auto p-4 flex-1 flex flex-col items-center justify-center min-h-[500px]">
+              <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-6">
+                 <span className="material-symbols-outlined text-3xl text-outline-variant">lock</span>
+              </div>
+              <h2 className="text-2xl font-black text-on-surface mb-2 tracking-tight">Debes iniciar sesión</h2>
+              <p className="text-on-surface-variant font-medium text-center max-w-sm mb-6">Tu feed global se nutre de las comunidades a las que perteneces. Inicia sesión o crea una cuenta.</p>
+              <div className="flex gap-4">
+                 <button onClick={() => router.push('/login')} className="px-6 py-2 bg-primary text-white font-bold rounded-full">Iniciar Sesión</button>
+                 <button onClick={() => router.push('/register')} className="px-6 py-2 bg-surface-container-high text-on-surface font-bold rounded-full border border-outline-variant/20 hover:bg-outline-variant/10">Registrarme</button>
+              </div>
+           </div>
+        )}
+
+        {accessState === "empty" && (
+           <div className="max-w-7xl w-full mx-auto p-4 flex-1 flex flex-col items-center justify-center min-h-[500px]">
+              <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-6 border border-outline-variant/10">
+                 <span className="material-symbols-outlined text-3xl text-outline-variant">group_add</span>
+              </div>
+              <h2 className="text-2xl font-black text-on-surface mb-2 tracking-tight">Tu feed está vacío</h2>
+              <p className="text-on-surface-variant font-medium text-center max-w-sm mb-6">Aún no eres miembro de ninguna comunidad. Únete a ecosistemas increíbles para ver contenido exclusivo.</p>
+              <button className="px-6 py-2 bg-on-surface text-surface font-bold rounded-full">Explorar Comunidades</button>
+           </div>
+        )}
+
+        {accessState === "pending" && (
+           <div className="min-h-[300px] w-full flex items-center justify-center"><span className="material-symbols-outlined animate-spin text-primary">loader</span></div>
+        )}
+
+        {accessState === "success" && activeCommunity && (
         <div className="max-w-7xl mx-auto px-4 lg:px-8 pt-8 flex flex-col lg:grid lg:grid-cols-[1fr_360px] lg:gap-12 gap-8">
           
           <div className="flex flex-col gap-6">
@@ -150,7 +155,12 @@ export default function DashboardPage() {
 
             {/* Posts Feed */}
             <div className="flex flex-col gap-6 lg:gap-8">
-              {filteredPosts.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm flex flex-col items-center">
+                  <span className="material-symbols-outlined animate-spin text-4xl text-primary mb-4">refresh</span>
+                  <p className="text-on-surface-variant font-medium">Cargando Muro...</p>
+                </div>
+              ) : filteredPosts.length === 0 ? (
                 <div className="text-center py-20 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm flex flex-col items-center">
                   <span className="material-symbols-outlined text-4xl text-outline-variant mb-4">forum</span>
                   <p className="text-on-surface-variant font-medium">Aún no hay publicaciones en esta categoría de la comunidad.</p>
@@ -165,18 +175,14 @@ export default function DashboardPage() {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex gap-3 items-center">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-outline-variant/20 overflow-hidden cursor-pointer shrink-0">
-                            <img alt={post.author} src={post.avatar} className="w-full h-full object-cover" />
+                            <img alt={post.author?.full_name} src={post.author?.avatar_url || `https://i.pravatar.cc/150?u=${post.id}`} className="w-full h-full object-cover" />
                           </div>
                           <div>
                             <h3 className="font-bold text-on-surface leading-tight hover:text-primary cursor-pointer transition-colors text-sm sm:text-base">
-                              {post.author}
+                              {post.author?.full_name || 'Desconocido'}
                             </h3>
                             <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-0.5 font-medium">
-                              <span>{post.time}</span>
-                              <span className="w-1 h-1 rounded-full bg-outline-variant"></span>
-                              <span className="font-bold uppercase tracking-widest text-[9px] sm:text-[10px] bg-surface-container-high px-2 py-0.5 rounded text-on-surface">
-                                {post.type}
-                              </span>
+                              <span>Hace un momento</span>
                             </div>
                           </div>
                         </div>
@@ -185,22 +191,9 @@ export default function DashboardPage() {
                         </button>
                       </div>
                       
-                      <h2 className="text-lg sm:text-xl font-extrabold tracking-tight mb-3 text-on-surface leading-snug">
-                        {post.title}
-                      </h2>
-                      <p className="text-on-surface-variant leading-relaxed mb-4 text-sm sm:text-base whitespace-pre-line">
+                      <p className="text-on-surface-variant leading-relaxed mb-4 text-sm sm:text-base whitespace-pre-line text-on-surface">
                         {post.content}
                       </p>
-                      
-                      {post.image && (
-                        <div className="rounded-xl overflow-hidden mb-4 bg-surface-container-low aspect-video border border-outline-variant/10 cursor-pointer hover:opacity-95 transition-opacity relative group">
-                          <img
-                            alt="Post Media"
-                            className="w-full h-full object-cover"
-                            src={post.image}
-                          />
-                        </div>
-                      )}
                     </div>
 
                     <div className="px-5 sm:px-6 py-3 bg-[#faf9f7] border-t border-outline-variant/10 flex items-center justify-between">
@@ -209,13 +202,13 @@ export default function DashboardPage() {
                           <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">
                             thumb_up
                           </span>
-                          <span className="text-sm font-bold">{post.likes}</span>
+                          <span className="text-sm font-bold">{post.likes || 0}</span>
                         </button>
                         <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
                           <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">
                             chat_bubble
                           </span>
-                          <span className="text-sm font-bold">{post.comments}</span>
+                          <span className="text-sm font-bold">{post.comments || 0}</span>
                         </button>
                       </div>
                     </div>
@@ -289,6 +282,7 @@ export default function DashboardPage() {
           </aside>
 
         </div>
+        )}
       </main>
       <BottomNavBar />
     </>

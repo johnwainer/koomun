@@ -6,21 +6,73 @@ import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
 
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 export default function CommunityLandingPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const router = useRouter();
 
-  // Let's create a beautiful dynamic mock data object based on the requested community slug
-  const formatSlugName = (s: string) => {
-    return s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  };
+  const [community, setCommunity] = useState<any>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [accessError, setAccessError] = useState(false);
 
-  const communityName = slug ? formatSlugName(slug) : "Ecosistema Koomun";
-  
-  // Deterministic Mock: if the slug has an even number of characters, it's premium. If odd, it's free.
-  // This guarantees a mix of free and paid communities when browsing from the Home page.
-  const isPaid = slug.length % 2 === 0;
-  const price = isPaid ? "$29/mes" : "Gratis";
+  useEffect(() => {
+     async function loadCommunity() {
+        try {
+           const res = await fetch(`/api/private/communities/${slug}`);
+           if (res.status === 401) {
+              setAccessError(true);
+              setLoading(false);
+              return;
+           }
+           if (res.status === 403) {
+              setAccessError(true);
+              setLoading(false);
+              return;
+           }
+           if (res.ok) {
+              const data = await res.json();
+              setCommunity(data.community);
+              setEvents(data.events || []);
+           }
+        } catch(e) {
+           console.error(e);
+        } finally {
+           setLoading(false);
+        }
+     }
+     loadCommunity();
+  }, [slug, router]);
+
+  if (loading) {
+     return (
+       <div className="min-h-screen flex items-center justify-center bg-surface">
+          <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
+       </div>
+     );
+  }
+
+  if (accessError) {
+     return (
+       <div className="min-h-screen flex flex-col items-center justify-center bg-surface text-center p-6 bg-surface-container-lowest">
+          <span className="material-symbols-outlined text-6xl text-amber-500 mb-4">lock</span>
+          <h2 className="text-2xl font-black text-on-surface mb-2 tracking-tight">Acceso Privado</h2>
+          <p className="text-on-surface-variant font-medium max-w-sm mb-6">Debes iniciar sesión y ser miembro activo para acceder al interior de esta comunidad.</p>
+          <div className="flex gap-4">
+             <button onClick={() => router.push('/login')} className="px-6 py-2 bg-primary text-white font-bold rounded-full shadow-md hover:bg-primary-dark transition-colors">Iniciar Sesión</button>
+             <button onClick={() => router.push('/dashboard')} className="px-6 py-2 bg-surface-container border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-surface-container-high transition-colors">Ver Mis Comunidades</button>
+          </div>
+       </div>
+     );
+  }
+
+  if (!community) return null;
+
+  const isPaid = community.price_tier === 'Pago';
+  const price = isPaid ? "Suscripción Premium" : "Gratis";
   
   return (
     <>
@@ -33,7 +85,7 @@ export default function CommunityLandingPage() {
         <div className="w-full h-32 md:h-64 bg-surface-container-highest relative overflow-hidden">
            {/* Cover Image */}
            <img 
-              src={isPaid ? "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif" : "https://media.giphy.com/media/l41lFw057lAJQMwg0/giphy.gif"} 
+              src={community.cover_image_url || (isPaid ? "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif" : "https://media.giphy.com/media/l41lFw057lAJQMwg0/giphy.gif")} 
               alt="Community Cover" 
               className="w-full h-full object-cover" 
            />
@@ -48,9 +100,9 @@ export default function CommunityLandingPage() {
            <div className="flex justify-between items-end -mt-12 md:-mt-16 mb-4">
               <div className="relative z-10 shrink-0">
                  <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-[4px] md:border-[6px] bg-surface-container-highest shadow-xl overflow-hidden ${isPaid ? 'border-zinc-900' : 'border-surface'}`}>
-                    <img src={`https://i.pravatar.cc/150?u=${slug}`} alt="Creator Avatar" className="w-full h-full object-cover" />
+                    <img src={community.creator?.avatar_url || `https://i.pravatar.cc/150?u=${community.id}`} alt="Creator Avatar" className="w-full h-full object-cover" />
                  </div>
-                 {isPaid && (
+                 {community.creator?.plan === 'Elite' && (
                     <div className="absolute -bottom-2 md:-bottom-3 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[8px] md:text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 md:px-3 md:py-1 rounded-full shadow-lg border-2 border-surface-container-lowest whitespace-nowrap z-20">
                        Elite
                     </div>
@@ -60,7 +112,7 @@ export default function CommunityLandingPage() {
               <div className="hidden md:block pb-2">
                   {isPaid && (
                     <span className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border-2 border-amber-500 text-amber-500 bg-amber-500/5`}>
-                       Comunidad Paga
+                       Comunidad Privada
                     </span>
                   )}
               </div>
@@ -81,10 +133,10 @@ export default function CommunityLandingPage() {
               </div>
               
               <h1 className="text-3xl md:text-5xl font-black text-on-surface tracking-tighter leading-tight mb-4">
-                 {communityName}
+                 {community.title}
               </h1>
-              <p className="text-on-surface-variant font-medium text-lg leading-relaxed max-w-3xl">
-                 Únete a una comunidad enfocada en el progreso constante, liderada por expertos de la industria. Rompe límites, conéctate con profesionales y construye el siguiente nivel de tu carrera tecnológica con nosotros.
+              <p className="text-on-surface-variant font-medium text-lg leading-relaxed max-w-3xl whitespace-pre-line">
+                 {community.description || "Únete a una comunidad enfocada en el progreso continuo."}
               </p>
            </div>
 
@@ -95,11 +147,8 @@ export default function CommunityLandingPage() {
               <div className="flex flex-col gap-10">
                  <section>
                     <h2 className="text-2xl font-bold text-on-surface mb-6">Acerca de este Ecosistema</h2>
-                    <p className="text-on-surface-variant leading-relaxed text-base mb-4">
-                       Bienvenido a {communityName}. Aquí no solo aprenderás teoría, sino que aplicarás en tiempo real las mismas estrategias que utilizamos en nuestras propias operaciones para generar resultados de alto impacto. 
-                    </p>
-                    <p className="text-on-surface-variant leading-relaxed text-base">
-                       Nuestra misión es recortar tu curva de aprendizaje a una fracción del tiempo mediante contenido curado sin rodeos, plantillas operativas listas para clocar y un entorno de personas que comparten tu misma hambre.
+                    <p className="text-on-surface-variant leading-relaxed text-base mb-4 whitespace-pre-line">
+                       {community.description}
                     </p>
                  </section>
 
@@ -146,43 +195,30 @@ export default function CommunityLandingPage() {
                     </div>
                     
                     <div className="flex flex-col gap-4">
-                       <div className="flex flex-col md:flex-row gap-4 p-5 rounded-2xl bg-surface-container-high/30 border border-outline-variant/10 hover:border-primary/30 transition-colors group">
-                          <div className="shrink-0 w-16 h-16 rounded-xl bg-surface-container-highest flex flex-col items-center justify-center text-center shadow-inner">
-                             <span className="text-xl font-black text-on-surface leading-none">12</span>
-                             <span className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">OCT</span>
+                       {events.length === 0 ? (
+                          <div className="text-center p-8 bg-surface-container border border-outline-variant/10 rounded-2xl text-on-surface-variant">
+                             No hay eventos próximos agendados.
                           </div>
-                          <div className="flex-1">
-                             <div className="flex items-center gap-2 mb-1">
-                                <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">videocam</span> Virtual</span>
+                       ) : events.map(evt => (
+                          <div key={evt.id} className="flex flex-col md:flex-row gap-4 p-5 rounded-2xl bg-surface-container-high/30 border border-outline-variant/10 hover:border-primary/30 transition-colors group">
+                             <div className="shrink-0 w-16 h-16 rounded-xl bg-surface-container-highest flex flex-col items-center justify-center text-center shadow-inner">
+                                <span className="text-xl font-black text-on-surface leading-none">{evt.event_date?.split('-')[2]}</span>
+                                <span className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">MES</span>
                              </div>
-                             <h4 className="font-bold text-lg text-on-surface mb-1 group-hover:text-primary transition-colors">Sesión de Análisis de Casos</h4>
-                             <p className="text-sm text-on-surface-variant flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[14px]">schedule</span> 19:00 - 20:30 (GMT-5)
-                             </p>
-                          </div>
-                          <div className="shrink-0 flex items-center md:items-start pt-2 md:pt-0">
-                             <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full whitespace-nowrap">Exclusivo Miembros</span>
-                          </div>
-                       </div>
-
-                       <div className="flex flex-col md:flex-row gap-4 p-5 rounded-2xl bg-surface-container-high/30 border border-outline-variant/10 hover:border-orange-500/30 transition-colors group">
-                          <div className="shrink-0 w-16 h-16 rounded-xl bg-surface-container-highest flex flex-col items-center justify-center text-center shadow-inner">
-                             <span className="text-xl font-black text-on-surface leading-none">05</span>
-                             <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mt-1">NOV</span>
-                          </div>
-                          <div className="flex-1">
-                             <div className="flex items-center gap-2 mb-1">
-                                <span className="bg-orange-500/10 text-orange-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">location_on</span> Presencial</span>
+                             <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                   <span className="bg-blue-500/10 text-blue-600 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">{evt.type?.includes('Virtual') ? 'videocam' : 'location_on'}</span> {evt.type}</span>
+                                </div>
+                                <h4 className="font-bold text-lg text-on-surface mb-1 group-hover:text-primary transition-colors">{evt.title}</h4>
+                                <p className="text-sm text-on-surface-variant flex items-center gap-2">
+                                   <span className="material-symbols-outlined text-[14px]">schedule</span> {evt.event_time}
+                                </p>
                              </div>
-                             <h4 className="font-bold text-lg text-on-surface mb-1 group-hover:text-orange-500 transition-colors">Mastermind Local City Hub</h4>
-                             <p className="text-sm text-on-surface-variant flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[14px]">location_on</span> Innovación Principal
-                             </p>
+                             <div className="shrink-0 flex items-center md:items-start pt-2 md:pt-0">
+                                <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full whitespace-nowrap">Exclusivo Miembros</span>
+                             </div>
                           </div>
-                          <div className="shrink-0 flex items-center md:items-start pt-2 md:pt-0">
-                              <span className="text-xs font-bold text-amber-600 bg-amber-500/10 px-3 py-1.5 rounded-full whitespace-nowrap">Comunidad Paga</span>
-                          </div>
-                       </div>
+                       ))}
                     </div>
                  </section>
               </div>

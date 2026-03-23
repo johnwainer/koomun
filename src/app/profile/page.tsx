@@ -1,15 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
-import { myCommunities } from "@/components/CommunitySwitcher";
 
 type TabOption = "Cuenta" | "Comunidades" | "Notificaciones" | "Facturación" | "Privacidad";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabOption>("Cuenta");
+  const [myCommunities, setMyCommunities] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadCommunities() {
+      if (activeTab === "Comunidades") {
+        try {
+          const res = await fetch('/api/private/my-communities');
+          if (res.ok) {
+            const data = await res.json();
+            setMyCommunities(data.communities || []);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    loadCommunities();
+  }, [activeTab]);
   
   // Payment methods state
   const [savedCards, setSavedCards] = useState<{last4: string; brand: string}[]>([{ last4: '4242', brand: 'Visa' }]);
@@ -205,9 +222,13 @@ export default function ProfilePage() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {myCommunities.map((c) => (
+                    {myCommunities.length === 0 ? (
+                      <div className="col-span-1 md:col-span-2 text-center p-8 text-on-surface-variant text-sm">
+                        Cargando o no hay comunidades
+                      </div>
+                    ) : myCommunities.map((c) => (
                       <article key={c.id} className="flex items-center gap-4 bg-surface-container border border-outline-variant/10 rounded-2xl p-4 hover:shadow-sm transition-shadow">
-                        <img src={c.image} alt={c.name} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-outline-variant/20" />
+                        <img src={c.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}`} alt={c.name} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-outline-variant/20" />
                         <div className="flex-1 min-w-0">
                           <h4 className="font-extrabold text-on-surface truncate text-sm">{c.name}</h4>
                           <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1 font-bold">Miembro desde Oct. 2024</p>

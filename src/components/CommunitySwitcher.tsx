@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export type MyCommunity = {
   id: string;
@@ -9,39 +9,51 @@ export type MyCommunity = {
   unreads: number;
 };
 
-export const myCommunities: MyCommunity[] = [
-  { id: "c1", name: "Colectivo de Diseño", image: "https://picsum.photos/id/111/400/250", unreads: 3 },
-  { id: "c2", name: "SaaS Builders", image: "https://picsum.photos/id/121/400/250", unreads: 0 },
-  { id: "c3", name: "Prompt Engineers", image: "https://picsum.photos/id/131/400/250", unreads: 12 },
-  { id: "c4", name: "Club de Inversores", image: "https://picsum.photos/id/141/400/250", unreads: 0 },
-  { id: "c5", name: "Mentes Maestras", image: "https://picsum.photos/id/151/400/250", unreads: 1 },
-  { id: "c6", name: "NoCode Founders", image: "https://picsum.photos/id/161/400/250", unreads: 5 },
-  { id: "c7", name: "Agencias Web", image: "https://picsum.photos/id/171/400/250", unreads: 0 },
-  { id: "c8", name: "UX/UI Masters", image: "https://picsum.photos/id/181/400/250", unreads: 2 },
-  { id: "c9", name: "Real Estate LATAM", image: "https://picsum.photos/id/191/400/250", unreads: 0 },
-  { id: "c10", name: "Creadores de Contenido", image: "https://picsum.photos/id/201/400/250", unreads: 8 },
-  { id: "c11", name: "Marketing B2B", image: "https://picsum.photos/id/211/400/250", unreads: 0 },
-  { id: "c12", name: "Startup Grinders", image: "https://picsum.photos/id/221/400/250", unreads: 0 },
-  { id: "c13", name: "Indie Hackers", image: "https://picsum.photos/id/231/400/250", unreads: 1 },
-  { id: "c14", name: "Crypto Traders", image: "https://picsum.photos/id/241/400/250", unreads: 0 },
-  { id: "c15", name: "Ventas B2B", image: "https://picsum.photos/id/251/400/250", unreads: 0 },
-];
+// Fetch on mount
 
 interface CommunitySwitcherProps {
   maxWidth?: string;
   activeId?: string;
   onChange?: (community: MyCommunity) => void;
+  onLoad?: (communities: MyCommunity[], status: "success" | "unauthorized" | "empty") => void;
 }
 
-export default function CommunitySwitcher({ maxWidth = "max-w-7xl", activeId, onChange }: CommunitySwitcherProps) {
-  // Use internal state if no props are passed
-  const [internalActive, setInternalActive] = useState<MyCommunity>(myCommunities[0]);
+export default function CommunitySwitcher({ maxWidth = "max-w-7xl", activeId, onChange, onLoad }: CommunitySwitcherProps) {
+  const [communities, setCommunities] = useState<MyCommunity[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  const [internalActiveId, setInternalActiveId] = useState<string>('');
 
-  const currentActiveId = activeId || internalActive.id;
+  useEffect(() => {
+    async function loadComms() {
+       try {
+           const res = await fetch("/api/private/my-communities");
+           if (res.status === 401) {
+              if (onLoad) onLoad([], "unauthorized");
+              return;
+           }
+           if (res.ok) {
+              const data = await res.json();
+              if (data.communities && data.communities.length > 0) {
+                 setCommunities(data.communities);
+                 if (!activeId) setInternalActiveId(data.communities[0].id);
+                 if (onChange && !activeId) onChange(data.communities[0]);
+                 if (onLoad) onLoad(data.communities, "success");
+              } else {
+                 if (onLoad) onLoad([], "empty");
+              }
+           }
+       } catch (e) {
+           if (onLoad) onLoad([], "empty");
+       }
+    }
+    loadComms();
+  }, []);
+
+  const currentActiveId = activeId || internalActiveId;
 
   const handleSelect = (c: MyCommunity) => {
-    setInternalActive(c);
+    setInternalActiveId(c.id);
     if (onChange) onChange(c);
   };
 
@@ -78,7 +90,7 @@ export default function CommunitySwitcher({ maxWidth = "max-w-7xl", activeId, on
         </div>
         
         <div ref={scrollRef} className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar scroll-smooth relative">
-          {myCommunities.map((c) => (
+          {communities.map((c) => (
             <button 
               key={c.id} 
               onClick={() => handleSelect(c)}
