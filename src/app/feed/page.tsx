@@ -36,6 +36,9 @@ export default function DashboardPage() {
   const [myAvatar, setMyAvatar] = useState("");
   const [myName, setMyName] = useState("");
   const [myUserId, setMyUserId] = useState("");
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
 
   useEffect(() => {
     async function loadFeed() {
@@ -120,7 +123,34 @@ export default function DashboardPage() {
     }
   };
 
-  const filters = ["Todos", "Preguntas", "Recursos", "Showcase"];
+  const handleDeletePost = async (postId: string) => {
+    if(!confirm("¿Deseas eliminar esta publicación?")) return;
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const res = await fetch(`/api/private/feed/${postId}`, {
+         method: 'DELETE',
+         headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+      });
+      if(res.ok) setPosts(prev => prev.filter(p => p.id !== postId));
+    } catch(err) { console.error(err); }
+  };
+
+  const handleSaveEdit = async (postId: string) => {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const res = await fetch(`/api/private/feed/${postId}`, {
+         method: 'PUT',
+         headers: session ? { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` } : { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ content: editingContent })
+      });
+      if(res.ok) {
+         setPosts(prev => prev.map(p => p.id === postId ? { ...p, content: editingContent } : p));
+         setEditingPostId(null);
+      }
+    } catch(err) { console.error(err); }
+  };
+
+  const filters = ["Todos", "General", "Preguntas", "Recursos", "Showcase"];
 
   // Placeholder filters implementation since we don't have types on the db model yet
   const filteredPosts = activeFilter === "Todos" 
@@ -251,29 +281,58 @@ export default function DashboardPage() {
                   <article key={post.id} className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/10 overflow-hidden relative transition-shadow hover:shadow-md">
                     <div className="p-5 sm:p-6 pb-4">
                       <div className="flex justify-between items-start mb-4">
-                        <div className="flex gap-3 items-center">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-outline-variant/20 overflow-hidden cursor-pointer shrink-0">
-                            <img alt={post.author?.full_name} src={post.author?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.full_name || 'U')}&background=random`} className="w-full h-full object-cover" />
+                        <div className="flex gap-3 items-start">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-outline-variant/20 overflow-hidden cursor-pointer shrink-0 bg-primary/10 text-primary font-black uppercase flex items-center justify-center">
+                            {post.author?.avatar_url ? (
+                               <img alt={post.author?.full_name} src={post.author.avatar_url} className="w-full h-full object-cover" />
+                            ) : (
+                               (post.author?.full_name || 'U').charAt(0)
+                            )}
                           </div>
                           <div>
                             <h3 className="font-bold text-on-surface leading-tight hover:text-primary cursor-pointer transition-colors text-sm sm:text-base">
                               {post.author?.full_name || 'Desconocido'}
                             </h3>
                             <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-0.5 font-medium">
-                              <span>Hace un momento</span>
+                              <span className="flex items-center gap-1 bg-surface-container-high px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-on-surface">
+                                 {post.media_url || 'General'}
+                              </span>
+                              <span>• Hace un momento</span>
                             </div>
                           </div>
                         </div>
                         {post.author?.id === myUserId && (
-                          <button className="p-1.5 hover:bg-surface-container-low rounded-full transition-colors text-outline-variant hover:text-on-surface">
-                            <span className="material-symbols-outlined text-[20px]">more_horiz</span>
-                          </button>
+                          <div className="relative">
+                            <button onClick={() => setActiveMenuId(activeMenuId === post.id ? null : post.id)} className="p-1.5 hover:bg-surface-container-low rounded-full transition-colors text-outline-variant hover:text-on-surface">
+                              <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                            </button>
+                            {activeMenuId === post.id && (
+                               <div className="absolute right-0 top-full mt-1 w-32 bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-lg z-10 py-1 flex flex-col overflow-hidden">
+                                  <button onClick={() => { setEditingPostId(post.id); setEditingContent(post.content); setActiveMenuId(null); }} className="px-4 py-2 text-xs font-bold text-left hover:bg-surface-container-low text-on-surface transition-colors flex items-center gap-2">
+                                     <span className="material-symbols-outlined text-[14px]">edit</span> Editar
+                                  </button>
+                                  <button onClick={() => { handleDeletePost(post.id); setActiveMenuId(null); }} className="px-4 py-2 text-xs font-bold text-left hover:bg-rose-500/10 text-rose-600 transition-colors flex items-center gap-2">
+                                     <span className="material-symbols-outlined text-[14px]">delete</span> Eliminar
+                                  </button>
+                               </div>
+                            )}
+                          </div>
                         )}
                       </div>
                       
-                      <p className="text-on-surface-variant leading-relaxed mb-4 text-sm sm:text-base whitespace-pre-line text-on-surface">
-                        {post.content}
-                      </p>
+                      {editingPostId === post.id ? (
+                        <div className="mb-4">
+                           <textarea className="w-full min-h-[100px] border border-outline-variant/30 rounded-xl p-3 text-sm focus:border-primary outline-none bg-surface-container-lowest text-on-surface resize-none mb-2 font-medium" value={editingContent} onChange={e => setEditingContent(e.target.value)} />
+                           <div className="flex justify-end gap-2">
+                              <button onClick={() => setEditingPostId(null)} className="px-4 py-1.5 text-xs font-bold rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors">Cancelar</button>
+                              <button onClick={() => handleSaveEdit(post.id)} className="px-4 py-1.5 text-xs font-bold rounded-full bg-primary text-white hover:bg-primary/90 shadow-sm transition-colors">Guardar</button>
+                           </div>
+                        </div>
+                      ) : (
+                        <p className="text-on-surface-variant leading-relaxed mb-4 text-sm sm:text-base whitespace-pre-line text-on-surface">
+                          {post.content}
+                        </p>
+                      )}
                     </div>
 
                     <div className="px-5 sm:px-6 py-3 bg-[#faf9f7] border-t border-outline-variant/10 flex items-center justify-between">
