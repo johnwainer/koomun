@@ -53,7 +53,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     // Traer próximos eventos para mostrarlos a todos en el landing
     let events: any[] = [];
-    const { data } = await supabaseClient
+    const { data } = await supabaseAdmin
       .from('events')
       .select('id, title, event_date, event_time, description, type')
       .eq('community_id', community.id)
