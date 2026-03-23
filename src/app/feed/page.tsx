@@ -44,7 +44,7 @@ export default function DashboardPage() {
         if (session?.user?.user_metadata?.avatar_url) {
            setMyAvatar(session.user.user_metadata.avatar_url);
         } else if (session?.user?.id) {
-           setMyAvatar(`https://i.pravatar.cc/150?u=${session.user.id}`);
+           setMyAvatar(`https://ui-avatars.com/api/?name=${encodeURIComponent(session?.user?.user_metadata?.full_name || 'U')}&background=random`);
         }
         const res = await fetch(`/api/private/feed?communityId=${activeCommunity.id}`, {
            headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
@@ -163,7 +163,7 @@ export default function DashboardPage() {
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10 flex flex-col gap-4">
               <div className="flex gap-4 items-start">
                 <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
-                  <img alt="Me" src={myAvatar || "https://i.pravatar.cc/150?u=current_user"} className="w-full h-full object-cover" />
+                  <img alt="Me" src={myAvatar || "https://ui-avatars.com/api/?name=U&background=random"} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 flex flex-col gap-3">
                   <textarea 
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex gap-3 items-center">
                           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-outline-variant/20 overflow-hidden cursor-pointer shrink-0">
-                            <img alt={post.author?.full_name} src={post.author?.avatar_url || `https://i.pravatar.cc/150?u=${post.id}`} className="w-full h-full object-cover" />
+                            <img alt={post.author?.full_name} src={post.author?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.full_name || 'U')}&background=random`} className="w-full h-full object-cover" />
                           </div>
                           <div>
                             <h3 className="font-bold text-on-surface leading-tight hover:text-primary cursor-pointer transition-colors text-sm sm:text-base">
