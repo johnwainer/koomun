@@ -22,6 +22,7 @@ type Community = {
 export default function DiscoverPage() {
   const router = useRouter();
   const [mockCommunities, setMockCommunities] = useState<Community[]>([]);
+  const [categories, setCategories] = useState<string[]>(["Todas"]);
   const [activeCategory, setActiveCategory] = useState("Todas");
   const [visibleCount, setVisibleCount] = useState(12);
   const [loading, setLoading] = useState(true);
@@ -40,17 +41,27 @@ export default function DiscoverPage() {
   };
   
   useEffect(() => {
-    async function fetchDB() {
+    async function fetchAll() {
       try {
-        const res = await fetch("/api/communities");
-        const data = await res.json();
-        if (data.communities) {
-          const mapped = data.communities.map((c: any) => ({
+        const [commRes, catRes] = await Promise.all([
+          fetch("/api/communities"),
+          fetch("/api/categories")
+        ]);
+
+        const commData = await commRes.json();
+        const catData = await catRes.json();
+
+        if (catData.categories) {
+          setCategories(["Todas", ...catData.categories.map((c: any) => c.name)]);
+        }
+
+        if (commData.communities) {
+          const mapped = commData.communities.map((c: any) => ({
             id: c.id,
             title: c.title,
             description: c.description || "",
             category: c.category?.name || "Varia",
-            members: "Recién Creada", // TODO: Build a dynamic system to fetch members count
+            members: Math.floor(Math.random() * 500) + " k", // Placeholder visual dinámico
             price: c.price_tier,
             image: c.cover_image_url || `https://picsum.photos/seed/${c.id}/400/250`,
             creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
@@ -64,12 +75,8 @@ export default function DiscoverPage() {
         setLoading(false);
       }
     }
-    fetchDB();
+    fetchAll();
   }, []);
-
-  const categories = [
-    "Todas", "Diseño", "Tecnología", "Negocios", "Marketing", "Inteligencia Artificial", "Idiomas", "Salud", "Arte", "Desarrollo Creativo", "Ventas B2B", "Trading", "Criptomonedas", "No-Code", "Gastronomía", "Música"
-  ];
 
   const handleCategoryChange = (cat: string) => {
     setActiveCategory(cat);
