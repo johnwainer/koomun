@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [isPosting, setIsPosting] = useState(false);
   const [myAvatar, setMyAvatar] = useState("");
   const [myName, setMyName] = useState("");
+  const [myUserId, setMyUserId] = useState("");
 
   useEffect(() => {
     async function loadFeed() {
@@ -46,6 +47,7 @@ export default function DashboardPage() {
            setMyAvatar(session.user.user_metadata.avatar_url);
         }
         if (session?.user) {
+           setMyUserId(session.user.id);
            setMyName(session.user.user_metadata?.full_name || session.user.email || "U");
         }
         const res = await fetch(`/api/private/feed?communityId=${activeCommunity.id}`, {
@@ -99,10 +101,20 @@ export default function DashboardPage() {
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count: (p.likes_count || 0) + 1 } : p));
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
-      await fetch(`/api/private/feed/${postId}/like`, {
+      const res = await fetch(`/api/private/feed/${postId}/like`, {
          method: 'POST',
          headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
       });
+      if (res.ok) {
+         const data = await res.json();
+         // sync the real backend state immediately to fix optimism misalignments
+         setPosts(prev => prev.map(p => 
+            p.id === postId ? { ...p, likes_count: data.likes } : p
+         ));
+      } else {
+         // Revert on error
+         setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count: Math.max(0, (p.likes_count || 0) - 1) } : p));
+      }
     } catch(err) {
        console.error(err);
     }
@@ -252,9 +264,11 @@ export default function DashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <button className="p-1.5 hover:bg-surface-container-low rounded-full transition-colors text-outline-variant hover:text-on-surface">
-                          <span className="material-symbols-outlined text-[20px]">more_horiz</span>
-                        </button>
+                        {post.author?.id === myUserId && (
+                          <button className="p-1.5 hover:bg-surface-container-low rounded-full transition-colors text-outline-variant hover:text-on-surface">
+                            <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+                          </button>
+                        )}
                       </div>
                       
                       <p className="text-on-surface-variant leading-relaxed mb-4 text-sm sm:text-base whitespace-pre-line text-on-surface">
@@ -269,12 +283,6 @@ export default function DashboardPage() {
                             thumb_up
                           </span>
                           <span className="text-sm font-bold">{post.likes_count || 0}</span>
-                        </button>
-                        <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
-                          <span className="material-symbols-outlined text-[20px] group-active:scale-90 transition-transform">
-                            chat_bubble
-                          </span>
-                          <span className="text-sm font-bold">{post.comments?.[0]?.count || 0}</span>
                         </button>
                       </div>
                     </div>
