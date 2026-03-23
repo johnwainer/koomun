@@ -76,6 +76,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span className="material-symbols-outlined text-xl">category</span>
             Categorías Globales
           </Link>
+          <Link href="/admin/events" className={getNavClass('/admin/events')}>
+            <span className="material-symbols-outlined text-xl">event</span>
+            Eventos Central
+          </Link>
+          <Link href="/admin/feed" className={getNavClass('/admin/feed')}>
+            <span className="material-symbols-outlined text-xl">forum</span>
+            Feed Global
+          </Link>
+          <Link href="/admin/library" className={getNavClass('/admin/library')}>
+            <span className="material-symbols-outlined text-xl">local_library</span>
+            Librería Central
+          </Link>
+          <div className="my-1 border-t border-outline-variant/10"></div>
           <Link href="/admin/endpoints" className={getNavClass('/admin/endpoints')}>
             <span className="material-symbols-outlined text-xl">api</span>
             API Endpoints
