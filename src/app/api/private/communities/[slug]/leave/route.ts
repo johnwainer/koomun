@@ -7,6 +7,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ slug:
   try {
     const { slug } = await params;
     
+    const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slug);
+
     // Auth Validation via header or cookie
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -14,8 +16,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ slug:
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     if (authError || !user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-    // Fetch Community ID using slug 
-    const { data: comm, error: commError } = await supabaseAdmin.from('communities').select('id, creator_id').eq('slug', slug).single();
+    // Fetch Community ID using slug mapping
+    let query = supabaseAdmin.from('communities').select('id, creator_id');
+    if (isUUID) {
+       query = query.eq('id', slug);
+    } else {
+       query = query.ilike('title', '%' + slug.replace(/-/g, '%') + '%');
+    }
+    const { data: comm, error: commError } = await query.single();
     if (commError || !comm) return NextResponse.json({ error: "Comunidad no encontrada" }, { status: 404 });
 
     // Prevent creator from leaving mapping if business rule says creator shouldn't normally do it, but we can just delete it anyway.
