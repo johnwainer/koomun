@@ -1,11 +1,15 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
-import CommunitySwitcher, { MyCommunity } from "@/components/CommunitySwitcher";
+import { useRouter } from "next/navigation";
+import CommunitySwitcher from "@/components/CommunitySwitcher";
+import type { MyCommunity } from "@/components/CommunitySwitcher";
+import AccessMessage from "@/components/AccessMessage";
 
 // --- Tipos de Datos ---
 type Course = {
@@ -32,9 +36,6 @@ type Module = {
   title: string;
   lessons: Lesson[];
 };
-
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function ClassroomPage() {
   const router = useRouter();
@@ -126,28 +127,21 @@ export default function ClassroomPage() {
         />
         
         {accessState === "unauthorized" && (
-           <div className="max-w-7xl w-full mx-auto p-4 flex-1 flex flex-col items-center justify-center min-h-[500px]">
-              <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-6">
-                 <span className="material-symbols-outlined text-3xl text-outline-variant">lock</span>
-              </div>
-              <h2 className="text-2xl font-black text-on-surface mb-2 tracking-tight">Debes iniciar sesión</h2>
-              <p className="text-on-surface-variant font-medium text-center max-w-sm mb-6">Inicia sesión y obtén el acceso al contenido exclusivo de librerías y programas en tus comunidades.</p>
-              <div className="flex gap-4">
-                 <button onClick={() => router.push('/login')} className="px-6 py-2 bg-primary text-white font-bold rounded-full">Iniciar Sesión</button>
-                 <button onClick={() => router.push('/register')} className="px-6 py-2 bg-surface-container-high text-on-surface font-bold rounded-full border border-outline-variant/20 hover:bg-outline-variant/10">Registrarme</button>
-              </div>
-           </div>
+           <AccessMessage 
+              type="unauthorized" 
+              title="Debes iniciar sesión" 
+              description="Inicia sesión y obtén el acceso al contenido exclusivo de librerías y programas en tus comunidades." 
+              icon="lock" 
+           />
         )}
 
         {accessState === "empty" && (
-           <div className="max-w-7xl w-full mx-auto p-4 flex-1 flex flex-col items-center justify-center min-h-[500px]">
-              <div className="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-6 border border-outline-variant/10">
-                 <span className="material-symbols-outlined text-3xl text-outline-variant">menu_book</span>
-              </div>
-              <h2 className="text-2xl font-black text-on-surface mb-2 tracking-tight">Librería Vacía</h2>
-              <p className="text-on-surface-variant font-medium text-center max-w-sm mb-6">Aún no eres miembro de ninguna comunidad para ver sus programas y recursos estructurados de estudio.</p>
-              <button className="px-6 py-2 bg-on-surface text-surface font-bold rounded-full">Explorar Comunidades</button>
-           </div>
+           <AccessMessage 
+              type="empty" 
+              title="Librería Vacía" 
+              description="Aún no eres miembro de ninguna comunidad para ver sus programas y recursos estructurados de estudio." 
+              icon="menu_book" 
+           />
         )}
 
         {accessState === "pending" && (

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(req: Request) {
   try {
-    const { data: events, error } = await supabaseClient
+    const { data: events, error } = await supabaseAdmin
       .from('events')
       .select('id, title, description, type, event_date, event_time, location_or_link, visibility, community_id, creator:profiles(full_name)')
       .order('event_date', { ascending: true });

@@ -8,6 +8,7 @@ import BottomNavBar from "@/components/BottomNavBar";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import AccessMessage from "@/components/AccessMessage";
 
 export default function CommunityLandingPage() {
   const params = useParams();
@@ -57,15 +58,12 @@ export default function CommunityLandingPage() {
 
   if (accessError) {
      return (
-       <div className="min-h-screen flex flex-col items-center justify-center bg-surface text-center p-6 bg-surface-container-lowest">
-          <span className="material-symbols-outlined text-6xl text-amber-500 mb-4">lock</span>
-          <h2 className="text-2xl font-black text-on-surface mb-2 tracking-tight">Acceso Privado</h2>
-          <p className="text-on-surface-variant font-medium max-w-sm mb-6">Debes iniciar sesión y ser miembro activo para acceder al interior de esta comunidad.</p>
-          <div className="flex gap-4">
-             <button onClick={() => router.push('/login')} className="px-6 py-2 bg-primary text-white font-bold rounded-full shadow-md hover:bg-primary-dark transition-colors">Iniciar Sesión</button>
-             <button onClick={() => router.push('/dashboard')} className="px-6 py-2 bg-surface-container border border-outline-variant/30 text-on-surface rounded-full font-bold hover:bg-surface-container-high transition-colors">Ver Mis Comunidades</button>
-          </div>
-       </div>
+       <AccessMessage 
+          type="private" 
+          title="Acceso Privado" 
+          description="Debes iniciar sesión y ser miembro activo para acceder al interior de esta comunidad." 
+          icon="lock" 
+       />
      );
   }
 
