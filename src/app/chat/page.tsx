@@ -24,28 +24,33 @@ const mockContacts: ChatUser[] = [
 ];
 
 export default function ChatPage() {
-  const [activeChat, setActiveChat] = useState<ChatUser>(mockContacts[0]);
+  const [activeChat, setActiveChat] = useState<ChatUser | null>(null);
   const [showChatOnMobile, setShowChatOnMobile] = useState(false);
   const [message, setMessage] = useState("");
   const [authStatus, setAuthStatus] = useState<"pending" | "success" | "unauthorized">("pending");
+  const [contacts, setContacts] = useState<ChatUser[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
 
   useEffect(() => {
      async function checkAuth() {
         try {
            const res = await fetch("/api/private/chat");
            if (res.status === 401) { setAuthStatus("unauthorized"); return; }
-           setAuthStatus("success");
+           
+           if (res.ok) {
+              const data = await res.json();
+              if (data.messages && data.messages.length > 0) {
+                 // Format actual contacts, but since DB is empty we set empty.
+                 setContacts([]);
+              } else {
+                 setContacts([]);
+              }
+              setAuthStatus("success");
+           }
         } catch(e) { setAuthStatus("unauthorized"); }
      }
      checkAuth();
   }, []);
-
-  const mockMessages = [
-    { sender: "me", text: "Hola Esteban, ¿cómo vas con la integración en Vercel?", time: "10:30 AM" },
-    { sender: "them", text: "¡Hola! Todo perfecto, logré subir el frontend pero tengo dudas con las variables de entorno de Supabase.", time: "10:35 AM" },
-    { sender: "me", text: "No te preocupes. Recuerda anexar NEXT_PUBLIC_SUPABASE_URL y ANON_KEY en el panel de deployment.", time: "10:40 AM" },
-    { sender: "them", text: "¡Excelente! Nos vemos en la llamada de mañana.", time: "10:45 AM" },
-  ];
 
   return (
     <>
@@ -59,6 +64,10 @@ export default function ChatPage() {
            </div>
         ) : authStatus === "unauthorized" ? (
            <AccessMessage type="unauthorized" title="Debes iniciar sesión" description="Inicia sesión para hablar con miembros y creadores de otros ecosistemas." icon="chat_bubble" />
+        ) : contacts.length === 0 ? (
+           <div className="flex-1 w-full flex items-center justify-center p-4">
+              <AccessMessage type="empty" title="Buzón de Mensajes Vacío" description="Aún no tienes conversaciones con otros usuarios. ¡Ve a explorar ecosistemas o creadores!" icon="chat" />
+           </div>
         ) : (
         <div className="flex-1 max-w-7xl mx-auto w-full flex bg-surface-container-lowest lg:rounded-2xl lg:shadow-sm overflow-hidden border-x border-b lg:border-t lg:my-6 border-outline-variant/10">
           
@@ -77,12 +86,12 @@ export default function ChatPage() {
             </header>
 
             <div className="flex-1 overflow-y-auto no-scrollbar">
-              {mockContacts.map((contact) => (
+              {contacts.map((contact) => (
                 <button 
                   key={contact.id}
                   onClick={() => { setActiveChat(contact); setShowChatOnMobile(true); }}
                   className={`w-full flex items-center gap-3 p-4 text-left border-b border-outline-variant/5 transition-colors ${
-                    activeChat.id === contact.id ? "bg-primary/5" : "hover:bg-surface-container-low"
+                    activeChat?.id === contact.id ? "bg-primary/5" : "hover:bg-surface-container-low"
                   }`}
                 >
                   <div className="relative shrink-0">
@@ -93,7 +102,7 @@ export default function ChatPage() {
                   </div>
                   <div className="flex-1 overflow-hidden">
                      <div className="flex justify-between items-center mb-1">
-                       <h4 className={`text-sm font-bold truncate ${activeChat.id === contact.id ? "text-primary" : "text-on-surface"}`}>{contact.name}</h4>
+                       <h4 className={`text-sm font-bold truncate ${activeChat?.id === contact.id ? "text-primary" : "text-on-surface"}`}>{contact.name}</h4>
                        <span className="text-[10px] text-on-surface-variant font-medium shrink-0 ml-2">{contact.time}</span>
                      </div>
                      <p className={`text-xs truncate ${contact.unread > 0 ? "text-on-surface font-bold" : "text-on-surface-variant font-medium"}`}>
@@ -121,14 +130,14 @@ export default function ChatPage() {
                      <span className="material-symbols-outlined text-[20px]">arrow_back</span>
                   </button>
                   <div className="relative">
-                    <img src={activeChat.avatar} alt={activeChat.name} className="w-10 h-10 rounded-full object-cover border border-outline-variant/20" />
-                    {activeChat.online && (
+                    <img src={activeChat?.avatar} alt={activeChat?.name} className="w-10 h-10 rounded-full object-cover border border-outline-variant/20" />
+                    {activeChat?.online && (
                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-surface-container-lowest"></div>
                      )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-on-surface leading-tight">{activeChat.name}</h3>
-                    <p className="text-xs text-on-surface-variant">{activeChat.online ? 'En línea' : 'Desconectado'}</p>
+                    <h3 className="font-bold text-on-surface leading-tight">{activeChat?.name}</h3>
+                    <p className="text-xs text-on-surface-variant">{activeChat?.online ? 'En línea' : 'Desconectado'}</p>
                   </div>
                </div>
                <div className="flex gap-2">
@@ -148,7 +157,7 @@ export default function ChatPage() {
                 </span>
               </div>
               
-              {mockMessages.map((msg, i) => (
+              {messages.map((msg, i) => (
                 <div key={i} className={`flex max-w-[70%] ${msg.sender === "me" ? "self-end" : "self-start"}`}>
                   <div className={`p-4 rounded-2xl relative ${
                     msg.sender === "me" 

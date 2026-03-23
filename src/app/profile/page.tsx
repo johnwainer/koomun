@@ -10,6 +10,25 @@ type TabOption = "Cuenta" | "Comunidades" | "Notificaciones" | "Facturación" | 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabOption>("Cuenta");
   const [myCommunities, setMyCommunities] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>({ first_name: "", last_name: "", biography: "", website: "" });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    async function fetchMe() {
+       try {
+          const res = await fetch("/api/private/me");
+          if (res.ok) {
+             const data = await res.json();
+             setUser(data.user);
+             if(data.profile) {
+                setProfile(data.profile);
+             }
+          }
+       } catch(e) {}
+    }
+    fetchMe();
+  }, []);
 
   useEffect(() => {
     async function loadCommunities() {
@@ -60,7 +79,7 @@ export default function ProfilePage() {
                 <img
                   alt="Avatar"
                   className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaEjjRsXuqJp0GgwkcLPHbqsE2EmL3vxnuX4W63bZiql8xJY3mY9H-KiDBGYaaBZ3DexhjNBU_vLaFINoHNwT16x30mg0Lv5KMbuWFRXwLr-KoJ4Nwfc0Hb-5VTS1i3so9RmkJJVmNeaObi5KDeDCPAfluyWRYRqNjCBO8HimqWgS2xbSVY4hfAzwSPwwmMjnivufLmKwnF_hHXctW5LVQOM-kkRGXPVUAXCD11XlukyzlAUzm8X38eWqgQPTCR5Qnn0K8WK7DqzTl"
+                  src={profile.avatar_url || `https://ui-avatars.com/api/?name=${user?.email ? user.email.charAt(0) : 'U'}`}
                 />
               </div>
               <div className="flex justify-end pt-4">
@@ -69,20 +88,22 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div className="mt-8">
-                <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Usuario Koomun</h1>
-                <p className="text-on-surface-variant font-medium mt-1">@innovador_latam</p>
+                <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">
+                   {profile.first_name || profile.last_name ? `${profile.first_name} ${profile.last_name}` : "Usuario Koomun"}
+                </h1>
+                <p className="text-on-surface-variant font-medium mt-1">{user?.email}</p>
                 <p className="mt-4 max-w-2xl leading-relaxed text-on-surface-variant">
-                  Diseñador de producto y entusiasta de las comunidades. Buscando siempre formas de optimizar flujos de trabajo en equipos remotos.
+                  {profile.biography || "Completa tu biografía para que otros sepan más de ti."}
                 </p>
                 
                 <div className="flex flex-wrap gap-6 mt-6 pt-6 border-t border-outline-variant/10 text-on-surface-variant">
                   <div className="flex gap-2 items-center">
                     <span className="material-symbols-outlined text-outline">location_on</span>
-                    <span className="text-sm font-medium">Buenos Aires, AR</span>
+                    <span className="text-sm font-medium">Ubicación oculta</span>
                   </div>
                   <div className="flex gap-2 items-center">
                     <span className="material-symbols-outlined text-outline">calendar_month</span>
-                    <span className="text-sm font-medium">Se unió en Sept. 2024</span>
+                    <span className="text-sm font-medium">Se unió recientemente</span>
                   </div>
                 </div>
               </div>
@@ -168,22 +189,31 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <form className="flex flex-col gap-6 max-w-2xl">
+                  <form className="flex flex-col gap-6 max-w-2xl" onSubmit={async (e) => {
+                     e.preventDefault();
+                     setSaving(true);
+                     await fetch("/api/private/me", {
+                        method: "POST",
+                        body: JSON.stringify(profile),
+                        headers: { "Content-Type": "application/json" }
+                     });
+                     setSaving(false);
+                  }}>
                     <div className="flex flex-col sm:flex-row gap-6">
                       <div className="flex-1 flex flex-col gap-1.5">
                         <label className="text-sm font-bold text-on-surface">Nombre</label>
-                        <input type="text" defaultValue="Usuario" className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
+                        <input type="text" value={profile.first_name || ""} onChange={e => setProfile({...profile, first_name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
                       </div>
                       <div className="flex-1 flex flex-col gap-1.5">
                         <label className="text-sm font-bold text-on-surface">Apellido</label>
-                        <input type="text" defaultValue="Koomun" className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
+                        <input type="text" value={profile.last_name || ""} onChange={e => setProfile({...profile, last_name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-bold text-on-surface">Correo Electrónico</label>
                       <div className="relative">
-                        <input type="email" defaultValue="usuario@ejemplo.com" disabled className="w-full px-4 py-3 rounded-xl border border-outline-variant/10 bg-surface-container-lowest text-on-surface-variant outline-none cursor-not-allowed text-sm" />
+                        <input type="email" value={user?.email || ""} disabled className="w-full px-4 py-3 rounded-xl border border-outline-variant/10 bg-surface-container-lowest text-on-surface-variant outline-none cursor-not-allowed text-sm" />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary text-[18px]">verified</span>
                       </div>
                     </div>
@@ -193,18 +223,18 @@ export default function ProfilePage() {
                          Biografía
                          <span className="text-xs font-normal text-on-surface-variant">Max. 160 caracteres</span>
                       </label>
-                      <textarea rows={4} defaultValue="Diseñador de producto y entusiasta de las comunidades. Buscando siempre formas de optimizar flujos de trabajo en equipos remotos." className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm resize-none text-on-surface" />
+                      <textarea rows={4} value={profile.biography || ""} onChange={e => setProfile({...profile, biography: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm resize-none text-on-surface" />
                     </div>
 
                      <div className="flex flex-col gap-1.5">
                       <label className="text-sm font-bold text-on-surface flex items-center gap-2">
                          <span className="material-symbols-outlined text-[18px] text-outline">language</span> Sitio Web / Enlace Social
                       </label>
-                      <input type="url" placeholder="https://" defaultValue="https://linkedin.com/in/usuario" className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
+                      <input type="url" placeholder="https://" value={profile.website || ""} onChange={e => setProfile({...profile, website: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
                     </div>
 
-                    <button type="submit" onClick={(e) => e.preventDefault()} className="self-end mt-4 px-8 py-3 bg-primary text-white rounded-full font-bold text-sm tracking-wide hover:shadow-lg active:scale-95 transition-all">
-                      Guardar Cambios
+                    <button type="submit" disabled={saving} className="self-end mt-4 px-8 py-3 bg-primary text-white rounded-full font-bold text-sm tracking-wide hover:shadow-lg active:scale-95 transition-all disabled:opacity-50">
+                      {saving ? "Guardando..." : "Guardar Cambios"}
                     </button>
                   </form>
                 </div>

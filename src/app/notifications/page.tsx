@@ -16,30 +16,27 @@ type Notification = {
   read: boolean;
   type: "like" | "comment" | "mention" | "system";
 };
-
-const mockNotifs: Notification[] = [
-  { id: "1", user: "Valeria M.", avatar: "https://i.pravatar.cc/150?u=v1", action: "comentó en tu post", target: "Framework 2024 para Workshop Design", time: "Hace 10 min", read: false, type: "comment" },
-  { id: "2", user: "Andrés L.", avatar: "https://i.pravatar.cc/150?u=a1", action: "te mencionó en", target: "¿Cuál es su stack actual para crear MVPs rápido?", time: "Hace 2 horas", read: false, type: "mention" },
-  { id: "3", user: "Sistema", avatar: "https://i.pravatar.cc/150?u=sys", action: "Has desbloqueado un nuevo nivel:", target: "Nivel 2 (Arquitecto)", time: "Hace 1 día", read: true, type: "system" },
-  { id: "4", user: "Carlos J.", avatar: "https://i.pravatar.cc/150?u=c1", action: "le dio me gusta a tu comentario en", target: "Mi primer $1k MRR", time: "Hace 2 días", read: true, type: "like" },
-  { id: "5", user: "Sofía T.", avatar: "https://i.pravatar.cc/150?u=s1", action: "le dio me gusta a tu post", target: "Framework 2024 para Workshop Design", time: "Hace 2 días", read: true, type: "like" },
-];
-
 export default function NotificationsPage() {
   const [authStatus, setAuthStatus] = useState<"pending" | "success" | "unauthorized">("pending");
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
-     async function checkAuth() {
+     async function loadData() {
         try {
            const res = await fetch("/api/private/notifications");
            if (res.status === 401) { setAuthStatus("unauthorized"); return; }
-           setAuthStatus("success");
+           
+           if (res.ok) {
+              const data = await res.json();
+              setNotifications(data.notifications || []);
+              setAuthStatus("success");
+           }
         } catch(e) { setAuthStatus("unauthorized"); }
      }
-     checkAuth();
+     loadData();
   }, []);
 
-  const unreadCount = mockNotifs.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
     <>
@@ -72,42 +69,51 @@ export default function NotificationsPage() {
         </header>
 
         <section className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/10 overflow-hidden">
-          {mockNotifs.map((notif, idx) => (
-            <div 
-              key={notif.id} 
-              className={`flex gap-4 p-5 hover:bg-surface-container-low transition-colors cursor-pointer border-b border-outline-variant/5 last:border-0 ${
-                !notif.read ? "bg-primary/5 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"
-              }`}
-            >
-               <div className="relative shrink-0">
-                 <img src={notif.avatar} alt={notif.user} className="w-12 h-12 rounded-full border border-outline-variant/20 object-cover" />
-                 <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-white border-2 border-surface-container-lowest shadow-sm ${
-                   notif.type === 'like' ? 'bg-pink-500' :
-                   notif.type === 'comment' ? 'bg-zinc-500' :
-                   notif.type === 'mention' ? 'bg-purple-500' : 'bg-green-500'
-                 }`}>
-                   <span className="material-symbols-outlined text-[12px]">
-                     {notif.type === 'like' ? 'favorite' :
-                      notif.type === 'comment' ? 'chat' :
-                      notif.type === 'mention' ? 'alternate_email' : 'star'}
-                   </span>
-                 </div>
-               </div>
-               
-               <div className="flex-1 flex flex-col justify-center">
-                 <p className="text-sm text-on-surface leading-snug">
-                   <span className="font-bold">{notif.user}</span> {notif.action} <span className="font-semibold text-primary">{notif.target}</span>
-                 </p>
-                 <p className="text-xs text-on-surface-variant mt-1 font-medium">{notif.time}</p>
-               </div>
-               
-               {!notif.read && (
-                 <div className="flex items-center justify-center shrink-0">
-                   <div className="w-2.5 h-2.5 bg-primary rounded-full"></div>
-                 </div>
-               )}
+          {notifications.length === 0 ? (
+            <div className="py-20 flex flex-col items-center justify-center opacity-70">
+              <span className="material-symbols-outlined text-4xl mb-4 text-outline-variant">notifications_paused</span>
+              <p className="font-bold text-on-surface-variant">No tienes notificaciones pendientes.</p>
             </div>
-          ))}
+          ) : (
+            notifications.map((notif, idx) => (
+             <div 
+               key={notif.id} 
+               className={`flex gap-4 p-5 hover:bg-surface-container-low transition-colors cursor-pointer border-b border-outline-variant/5 last:border-0 ${
+                 !notif.is_read ? "bg-primary/5 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"
+               }`}
+             >
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 bg-surface-container-high rounded-full border border-outline-variant/20 flex flex-col justify-center items-center">
+                     <span className="material-symbols-outlined text-outline-variant">person</span>
+                  </div>
+                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-white border-2 border-surface-container-lowest shadow-sm ${
+                    notif.type === 'like' ? 'bg-pink-500' :
+                    notif.type === 'comment' ? 'bg-zinc-500' :
+                    notif.type === 'mention' ? 'bg-purple-500' : 'bg-green-500'
+                  }`}>
+                    <span className="material-symbols-outlined text-[12px]">
+                      {notif.type === 'like' ? 'favorite' :
+                       notif.type === 'comment' ? 'chat' :
+                       notif.type === 'mention' ? 'alternate_email' : 'star'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex-1 flex flex-col justify-center">
+                  <p className="text-sm text-on-surface leading-snug">
+                    <span className="font-bold">{notif.title || "Notificación"}</span> <span className="font-semibold text-primary">{notif.content}</span>
+                  </p>
+                  <p className="text-xs text-on-surface-variant mt-1 font-medium">{new Date(notif.created_at).toLocaleDateString()}</p>
+                </div>
+                
+                {!notif.is_read && (
+                  <div className="flex items-center justify-center shrink-0">
+                    <div className="w-2.5 h-2.5 bg-primary rounded-full"></div>
+                  </div>
+                )}
+             </div>
+            ))
+          )}
         </section>
         </>
         )}
