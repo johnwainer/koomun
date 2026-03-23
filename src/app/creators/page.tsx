@@ -32,8 +32,8 @@ export default function CreatorsPage() {
             id: c.id,
             name: c.full_name,
             bio: c.bio || "Creador incansable y estratega digital.",
-            followers: Math.floor(Math.random() * 50) + "k", // TODO: Implement followers architecture later
-            communities: c.communities?.[0]?.count || 0,
+            followers: c.total_members >= 1000 ? (c.total_members/1000).toFixed(1) + "k" : c.total_members.toString(), 
+            communities: c.active_communities_count || 0,
             isElite: c.plan === 'elite',
             image: c.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`
           }));

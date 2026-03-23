@@ -97,6 +97,30 @@ export default function AdminEndpointsPage() {
       path: "/api/private/feed/[postId]/like",
       description: "Incrementa el contador de likes en una publicación del feed de manera optimista.",
       body: "N/A"
+    },
+    {
+      method: "DELETE",
+      path: "/api/private/communities/[slug]/leave",
+      description: "Permite al usuario abandonar una comunidad, borrando toda su participación e historial (GDPR compl.).",
+      body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/creators",
+      description: "Retorna el listado público de creadores con su influencia global calculada (Miembros Totales).",
+      body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/communities",
+      description: "Retorna el listado global y público de comunidades.",
+      body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/private/library",
+      description: "Obtiene los recursos y assets de valor de las comunidades en las que participa el usuario.",
+      body: "N/A"
     }
   ];
 

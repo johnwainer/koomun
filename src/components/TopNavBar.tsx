@@ -146,7 +146,11 @@ export default function TopNavBar() {
                   className="flex items-center justify-center w-10 h-10 rounded-full border border-outline-variant/20 hover:border-primary/50 transition-colors overflow-hidden shrink-0 ml-2 bg-primary/10 text-primary font-black uppercase"
                   title="Mi Perfil"
                 >
-                  {user.email ? user.email.charAt(0) : "U"}
+                  {user.user_metadata?.avatar_url ? (
+                     <img src={user.user_metadata.avatar_url} className="w-full h-full object-cover" />
+                  ) : (
+                     user.user_metadata?.full_name ? user.user_metadata.full_name.charAt(0) : (user.email ? user.email.charAt(0) : "U")
+                  )}
                 </Link>
                 <button
                   onClick={handleLogout}

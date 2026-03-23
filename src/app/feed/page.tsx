@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [newPostType, setNewPostType] = useState("General");
   const [isPosting, setIsPosting] = useState(false);
   const [myAvatar, setMyAvatar] = useState("");
+  const [myName, setMyName] = useState("");
 
   useEffect(() => {
     async function loadFeed() {
@@ -43,8 +44,9 @@ export default function DashboardPage() {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session?.user?.user_metadata?.avatar_url) {
            setMyAvatar(session.user.user_metadata.avatar_url);
-        } else if (session?.user?.id) {
-           setMyAvatar(`https://ui-avatars.com/api/?name=${encodeURIComponent(session?.user?.user_metadata?.full_name || 'U')}&background=random`);
+        }
+        if (session?.user) {
+           setMyName(session.user.user_metadata?.full_name || session.user.email || "U");
         }
         const res = await fetch(`/api/private/feed?communityId=${activeCommunity.id}`, {
            headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
@@ -162,8 +164,12 @@ export default function DashboardPage() {
             {/* Input Post Area */}
             <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10 flex flex-col gap-4">
               <div className="flex gap-4 items-start">
-                <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
-                  <img alt="Me" src={myAvatar || "https://ui-avatars.com/api/?name=U&background=random"} className="w-full h-full object-cover" />
+                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-black uppercase flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/20">
+                  {myAvatar ? (
+                    <img alt="Me" src={myAvatar} className="w-full h-full object-cover" />
+                  ) : (
+                    myName.charAt(0)
+                  )}
                 </div>
                 <div className="flex-1 flex flex-col gap-3">
                   <textarea 
