@@ -143,7 +143,29 @@ export default function AdminPage() {
                        {new Date(u.created_at).toLocaleDateString()}
                     </td>
                     <td className="p-4 text-right">
-                       <button className="w-8 h-8 rounded-full border border-outline-variant/20 hover:border-red-500 hover:text-red-500 transition-colors flex items-center justify-center text-outline-variant">
+                       <button 
+                         onClick={async () => {
+                           if (!window.confirm(`ATENCIÓN: ¿Seguro que deseas purgar la cuenta principal de ${u.email}? Se perderán todas sus comunidades y pagos de inmediato por acción en cascada (ON DELETE CASCADE).`)) return;
+
+                           try {
+                             const res = await fetch('/api/admin/users', {
+                               method: 'DELETE',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ userId: u.id })
+                             });
+
+                             if (res.ok) {
+                               setUsers(users.filter(user => user.id !== u.id));
+                             } else {
+                               alert('Fallo purga de usuario.');
+                             }
+                           } catch (err) {
+                             alert('Error de conectividad al purgar.');
+                           }
+                         }}
+                         className="w-8 h-8 rounded-full border border-outline-variant/20 hover:border-red-500 hover:text-red-500 transition-colors flex items-center justify-center text-outline-variant"
+                         title="Eliminar usuario definitivamente de Auth y SQL"
+                       >
                          <span className="material-symbols-outlined text-sm">block</span>
                        </button>
                     </td>

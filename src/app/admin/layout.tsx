@@ -82,9 +82,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </nav>
         
-        <footer className="p-4 border-t border-outline-variant/10 text-xs text-on-surface-variant text-center font-medium">
-          v1.0.0 — Koomun Systems
-        </footer>
+        <div className="p-4 border-t border-outline-variant/10">
+          <button 
+            onClick={async () => {
+              await supabaseClient.auth.signOut();
+              router.push('/login');
+            }}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors font-bold text-sm bg-surface-container-lowest border border-red-100"
+          >
+            <span className="material-symbols-outlined text-lg">logout</span>
+            Cerrar Sesión
+          </button>
+          <p className="mt-4 text-xs text-on-surface-variant text-center font-medium">v1.0.0 — Koomun Systems</p>
+        </div>
       </aside>
       
       {/* Main Panel */}

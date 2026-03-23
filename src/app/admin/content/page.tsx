@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 type InternalCommunity = {
   id: string;
   title: string;
-  category: string;
   price_tier: string;
   is_published: boolean;
   created_at: string;
@@ -13,7 +12,10 @@ type InternalCommunity = {
     full_name: string;
     email: string;
     avatar_url: string;
-  }
+  };
+  category: {
+    name: string;
+  };
 };
 
 export default function AdminContentPage() {
@@ -34,6 +36,41 @@ export default function AdminContentPage() {
     }
     fetchContent();
   }, []);
+
+  const handleToggleStatus = async (id: string, currentlyPublished: boolean) => {
+    try {
+      const res = await fetch('/api/admin/communities', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_published: !currentlyPublished })
+      });
+      if (res.ok) {
+        setCommunities(communities.map(c => c.id === id ? { ...c, is_published: !currentlyPublished } : c));
+      } else {
+        alert("Error cambiando estado");
+      }
+    } catch (e) {
+      alert("Error de conexión");
+    }
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!window.confirm(`¿Seguro que deseas eliminar el Universo "${title}" de forma PERMANENTE e irrecuperable?`)) return;
+    try {
+      const res = await fetch('/api/admin/communities', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      if (res.ok) {
+        setCommunities(communities.filter(c => c.id !== id));
+      } else {
+        alert("Error al eliminar la comunidad");
+      }
+    } catch (e) {
+      alert("Error de red");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto">
@@ -91,7 +128,7 @@ export default function AdminContentPage() {
                        </div>
                     </td>
                     <td className="p-4 text-xs font-black uppercase text-on-surface-variant">
-                       {c.category}
+                       {c.category?.name || 'Varia'}
                     </td>
                     <td className="p-4">
                        <span className={`px-3 py-1 text-[11px] font-black uppercase rounded-full ${c.is_published ? 'bg-green-500/20 text-green-700' : 'bg-amber-500/20 text-amber-700'}`}>
@@ -100,10 +137,18 @@ export default function AdminContentPage() {
                     </td>
                     <td className="p-4 text-right">
                        <div className="flex justify-end gap-2">
-                           <button className="w-8 h-8 rounded-full border border-outline-variant/20 hover:border-amber-500 hover:text-amber-600 transition-colors flex items-center justify-center text-outline-variant" title="Suspender Visibilidad">
-                             <span className="material-symbols-outlined text-sm">visibility_off</span>
+                           <button 
+                             onClick={() => handleToggleStatus(c.id, c.is_published)}
+                             className={`w-8 h-8 rounded-full border border-outline-variant/20 transition-colors flex items-center justify-center ${c.is_published ? 'hover:border-amber-500 hover:text-amber-600 text-outline-variant' : 'hover:border-green-500 hover:text-green-600 border-amber-500 text-amber-500'}`} 
+                             title={c.is_published ? "Suspender Visibilidad" : "Hacer Público"}
+                           >
+                             <span className="material-symbols-outlined text-sm">{c.is_published ? 'visibility_off' : 'visibility'}</span>
                            </button>
-                           <button className="w-8 h-8 rounded-full border border-outline-variant/20 hover:border-red-500 hover:text-red-500 transition-colors flex items-center justify-center text-outline-variant" title="Purgar (Hard Delete)">
+                           <button 
+                             onClick={() => handleDelete(c.id, c.title)}
+                             className="w-8 h-8 rounded-full border border-outline-variant/20 hover:border-red-500 hover:text-red-500 transition-colors flex items-center justify-center text-outline-variant" 
+                             title="Purgar (Hard Delete)"
+                           >
                              <span className="material-symbols-outlined text-sm">delete_forever</span>
                            </button>
                        </div>

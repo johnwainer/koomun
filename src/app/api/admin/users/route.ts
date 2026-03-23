@@ -24,12 +24,25 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
-  // Ej: Para crear o purgar un usuario como administrador sin pasar por su UI
+export async function DELETE(req: Request) {
   try {
-    const body = await req.json();
-    return NextResponse.json({ success: true, message: "Funcionalidad admin en construccion", body }, { status: 201 });
+    const { userId } = await req.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Se requiere userId' }, { status: 400 });
+    }
+
+    // Usando el Service Role (Admin) destruye la cuenta maestra de Autenticación
+    // Esto disparará la regla ON DELETE CASCADE de PostgreSQL y purgará los registros en profiles, communities, comments, etc!
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: "Usuario y sus relaciones destruidas globalmente" }, { status: 200 });
+
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
