@@ -6,8 +6,24 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ==========================================
--- 1. TABLES CREATION
+-- 1. TABLES CREATION (WiPE OLD ONES)
 -- ==========================================
+
+DROP TABLE IF EXISTS public.notifications CASCADE;
+DROP TABLE IF EXISTS public.direct_messages CASCADE;
+DROP TABLE IF EXISTS public.feed_comments CASCADE;
+DROP TABLE IF EXISTS public.feed_posts CASCADE;
+DROP TABLE IF EXISTS public.content_items CASCADE;
+DROP TABLE IF EXISTS public.content_modules CASCADE;
+DROP TABLE IF EXISTS public.events CASCADE;
+DROP TABLE IF EXISTS public.members CASCADE;
+DROP TABLE IF EXISTS public.communities CASCADE;
+DROP TABLE IF EXISTS public.categories CASCADE;
+DROP TABLE IF EXISTS public.payment_methods CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+
+-- Delete all existing authentication users cleanly
+DELETE FROM auth.users;
 
 CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
