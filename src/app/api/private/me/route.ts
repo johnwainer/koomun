@@ -28,7 +28,7 @@ export async function GET(req: Request) {
      if (error) {
        // if not found, we could potentially create one or just return the user session data
        if (error.code === 'PGRST116') {
-          return NextResponse.json({ user: session.user, profile: { role: 'user', first_name: '', last_name: '', biography: '' } }, { status: 200 });
+          return NextResponse.json({ user: session.user, profile: { role: 'user', full_name: '', bio: '' } }, { status: 200 });
        }
        throw error;
      }
@@ -60,15 +60,13 @@ export async function POST(req: Request) {
      // Upsert profile
      const { error } = await supabaseClient
         .from('profiles')
-        .upsert({ 
-           id: userId,
-           first_name: body.first_name,
-           last_name: body.last_name,
-           biography: body.biography,
+        .update({ 
+           full_name: body.full_name,
+           bio: body.bio,
            avatar_url: body.avatar_url,
-           website: body.website,
            updated_at: new Date().toISOString()
-        });
+        })
+        .eq('id', userId);
 
      if (error) throw error;
 

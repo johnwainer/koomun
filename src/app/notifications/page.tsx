@@ -109,7 +109,7 @@ export default function NotificationsPage() {
                 
                 <div className="flex-1 flex flex-col justify-center">
                   <p className="text-sm text-on-surface leading-snug">
-                    <span className="font-bold">{notif.actor?.first_name || "Alguien"}</span> {notif.action_text} <span className="font-semibold text-primary">{notif.target_text}</span>
+                    <span className="font-bold">{notif.actor?.full_name || "Alguien"}</span> {notif.action_text} <span className="font-semibold text-primary">{notif.target_text}</span>
                   </p>
                   <p className="text-xs text-on-surface-variant mt-1 font-medium">{new Date(notif.created_at).toLocaleDateString()}</p>
                 </div>

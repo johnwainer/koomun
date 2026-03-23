@@ -42,7 +42,7 @@ export default function AdminEndpointsPage() {
       method: "POST",
       path: "/api/private/me",
       description: "Upsert (actualiza o inserta) información general del perfil del usuario (nombre, biografía, etc).",
-      body: "{ first_name, last_name, biography, website, avatar_url }"
+      body: "{ full_name, bio, avatar_url }"
     },
     {
       method: "PUT",

@@ -12,7 +12,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabOption>("Cuenta");
   const [myCommunities, setMyCommunities] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>({ first_name: "", last_name: "", biography: "", website: "" });
+  const [profile, setProfile] = useState<any>({ full_name: "", bio: "" });
   const [saving, setSaving] = useState(false);
   const [password, setPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
@@ -96,7 +96,7 @@ export default function ProfilePage() {
               </div>
               <div className="mt-8">
                 <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">
-                   {profile.first_name || profile.last_name ? `${profile.first_name} ${profile.last_name}` : "Usuario Koomun"}
+                   {profile.full_name || "Usuario Koomun"}
                 </h1>
                 <p className="text-on-surface-variant font-medium mt-1">{user?.email}</p>
                 <p className="mt-4 max-w-2xl leading-relaxed text-on-surface-variant">
@@ -212,14 +212,10 @@ export default function ProfilePage() {
       })();
                      setSaving(false);
                   }}>
-                    <div className="flex flex-col sm:flex-row gap-6">
+                    <div className="flex flex-col gap-6">
                       <div className="flex-1 flex flex-col gap-1.5">
-                        <label className="text-sm font-bold text-on-surface">Nombre</label>
-                        <input type="text" value={profile.first_name || ""} onChange={e => setProfile({...profile, first_name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
-                      </div>
-                      <div className="flex-1 flex flex-col gap-1.5">
-                        <label className="text-sm font-bold text-on-surface">Apellido</label>
-                        <input type="text" value={profile.last_name || ""} onChange={e => setProfile({...profile, last_name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
+                        <label className="text-sm font-bold text-on-surface">Nombre Completo</label>
+                        <input type="text" value={profile.full_name || ""} onChange={e => setProfile({...profile, full_name: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
                       </div>
                     </div>
 
@@ -236,14 +232,7 @@ export default function ProfilePage() {
                          Biografía
                          <span className="text-xs font-normal text-on-surface-variant">Max. 160 caracteres</span>
                       </label>
-                      <textarea rows={4} value={profile.biography || ""} onChange={e => setProfile({...profile, biography: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm resize-none text-on-surface" />
-                    </div>
-
-                     <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                         <span className="material-symbols-outlined text-[18px] text-outline">language</span> Sitio Web / Enlace Social
-                      </label>
-                      <input type="url" placeholder="https://" value={profile.website || ""} onChange={e => setProfile({...profile, website: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm text-on-surface" />
+                      <textarea rows={4} value={profile.bio || ""} onChange={e => setProfile({...profile, bio: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-outline-variant/30 bg-surface-container-low outline-none focus:border-primary transition-colors text-sm resize-none text-on-surface" />
                     </div>
 
                     <button type="submit" disabled={saving} className="self-end mt-4 px-8 py-3 bg-primary text-white rounded-full font-bold text-sm tracking-wide hover:shadow-lg active:scale-95 transition-all disabled:opacity-50">
