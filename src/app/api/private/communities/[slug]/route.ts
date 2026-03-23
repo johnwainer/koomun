@@ -19,7 +19,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     let query = supabaseClient
       .from('communities')
-      .select('id, title, description, cover_image_url, is_private, price_tier, creator_id, creator:profiles(full_name, avatar_url, plan)');
+      .select('id, title, description, cover_image_url, is_published, price_tier, creator_id, creator:profiles(full_name, avatar_url, plan)');
 
     if (isUUID) {
        query = query.eq('id', slug);
