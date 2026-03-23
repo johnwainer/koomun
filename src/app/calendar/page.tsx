@@ -33,6 +33,7 @@ export default function CalendarPage() {
   const [mounted, setMounted] = useState(false);
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [visibleEventsCount, setVisibleEventsCount] = useState<number>(4);
   const [apiEvents, setApiEvents] = useState<CalendarEvent[]>([]);
   const router = useRouter();
 
@@ -179,7 +180,7 @@ export default function CalendarPage() {
                   return (
                     <button
                       key={day}
-                      onClick={() => setSelectedDate(day)}
+                      onClick={() => { setSelectedDate(day); setVisibleEventsCount(4); }}
                       className={`relative flex flex-col items-center justify-center rounded-xl font-bold transition-all text-sm aspect-square border-2 active:scale-95 ${
                         isSelected 
                           ? "border-primary bg-primary text-white shadow-lg shadow-primary/20 scale-105 z-10" 
@@ -192,9 +193,12 @@ export default function CalendarPage() {
                       
                       {hasEvents && (
                         <div className="flex gap-1 absolute bottom-2">
-                          {dayEvents.map((e, idx) => (
+                          {dayEvents.slice(0, 4).map((e, idx) => (
                             <span key={idx} className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : (e.type === 'Taller' ? 'bg-amber-500' : e.type === 'Reunión' ? 'bg-green-500' : 'bg-purple-500')}`}></span>
                           ))}
+                          {dayEvents.length > 4 && (
+                            <span className={`text-[8px] font-bold ${isSelected ? 'text-white' : 'text-primary'}`}>+{dayEvents.length - 4}</span>
+                          )}
                         </div>
                       )}
                     </button>
@@ -226,69 +230,81 @@ export default function CalendarPage() {
                   <p className="text-xs">No hay eventos programados para esta fecha.</p>
                 </div>
               ) : (
-                selectedEvents.map((evt) => (
-                  <article 
-                    onClick={() => router.push(`/c/${(evt.community_title || "comunidad").toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
-                    key={evt.id} 
-                    className={`bg-surface-container-lowest border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group cursor-pointer ${evt.is_mine ? 'border-primary/50 bg-primary/5' : 'border-outline-variant/20 hover:border-primary/30'}`}
-                  >
-                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${evt.type === 'Taller' ? 'bg-amber-500' : evt.type === 'Reunión' ? 'bg-green-500' : 'bg-purple-500'}`}></div>
-                    
-                    <div className="flex items-center justify-between mb-3">
-                       <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md flex items-center gap-1.5 border ${
-                            evt.type === 'Taller' ? 'bg-amber-50 text-amber-700 border-amber-200' : evt.type === 'Reunión' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200'
-                          }`}>
-                            <span className="material-symbols-outlined text-[12px]">{evt.type === 'Taller' ? 'design_services' : evt.type === 'Reunión' ? 'groups' : 'chat'}</span>
-                            {evt.type}
-                          </span>
-                          <span className="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest bg-surface-container-high border border-outline-variant/20 text-on-surface flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[12px]">dataset</span> {evt.community_title}
-                          </span>
-                          {evt.is_mine && (
-                             <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-primary text-white flex items-center gap-1 shadow-sm"><span className="material-symbols-outlined text-[10px]">star</span> Tu Comunidad</span>
-                          )}
-                       </div>
-                    </div>
+                <>
+                  {selectedEvents.slice(0, visibleEventsCount).map((evt) => (
+                    <article 
+                      onClick={() => router.push(`/c/${(evt.community_title || "comunidad").toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
+                      key={evt.id} 
+                      className={`bg-surface-container-lowest border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden group cursor-pointer ${evt.is_mine ? 'border-primary/50 bg-primary/5' : 'border-outline-variant/20 hover:border-primary/30'}`}
+                    >
+                      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${evt.type === 'Taller' ? 'bg-amber-500' : evt.type === 'Reunión' ? 'bg-green-500' : 'bg-purple-500'}`}></div>
+                      
+                      <div className="flex items-center justify-between mb-3">
+                         <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md flex items-center gap-1.5 border ${
+                              evt.type === 'Taller' ? 'bg-amber-50 text-amber-700 border-amber-200' : evt.type === 'Reunión' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200'
+                            }`}>
+                              <span className="material-symbols-outlined text-[12px]">{evt.type === 'Taller' ? 'design_services' : evt.type === 'Reunión' ? 'groups' : 'chat'}</span>
+                              {evt.type}
+                            </span>
+                            <span className="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest bg-surface-container-high border border-outline-variant/20 text-on-surface flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[12px]">dataset</span> {evt.community_title}
+                            </span>
+                            {evt.is_mine && (
+                               <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-primary text-white flex items-center gap-1 shadow-sm"><span className="material-symbols-outlined text-[10px]">star</span> Tu Comunidad</span>
+                            )}
+                         </div>
+                      </div>
 
-                    <h3 className="font-extrabold text-on-surface text-lg leading-tight mb-2 group-hover:text-primary transition-colors">{evt.title}</h3>
-                    
-                    <p className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5 mb-4 bg-surface-container py-1.5 px-3 rounded-lg w-max border border-outline-variant/10">
-                      <span className="material-symbols-outlined text-[14px] text-primary">schedule</span>
-                      {evt.time}
-                    </p>
-                    
-                    <p className="text-sm text-on-surface-variant leading-relaxed mb-5 line-clamp-2">
-                      {evt.description}
-                    </p>
+                      <h3 className="font-extrabold text-on-surface text-lg leading-tight mb-2 group-hover:text-primary transition-colors">{evt.title}</h3>
+                      
+                      <p className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5 mb-4 bg-surface-container py-1.5 px-3 rounded-lg w-max border border-outline-variant/10">
+                        <span className="material-symbols-outlined text-[14px] text-primary">schedule</span>
+                        {evt.time}
+                      </p>
+                      
+                      <p className="text-sm text-on-surface-variant leading-relaxed mb-5 line-clamp-2">
+                        {evt.description}
+                      </p>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-outline-variant/10">
-                      <div 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (evt.creator_username) {
-                            router.push(`/creator/${evt.creator_username}`);
-                          }
-                        }}
-                        className="flex items-center gap-2 group/creator hover:bg-surface-container-high px-2 py-1 -ml-2 rounded-lg transition-colors cursor-pointer relative"
-                      >
-                        <div className="relative">
-                          <img className="w-7 h-7 rounded-full border border-outline-variant/30 object-cover" src={evt.creator_avatar || `https://i.pravatar.cc/150?u=${evt.creator}`} alt={evt.creator} />
-                          {evt.creator_plan === 'elite' && (
-                             <div className="absolute -bottom-1 -right-1 bg-zinc-900 text-white text-[6px] font-black uppercase tracking-widest px-1 py-0.5 rounded-full shadow-lg border border-surface-container-lowest">
-                                E
-                             </div>
-                          )}
+                      <div className="flex items-center justify-between pt-4 border-t border-outline-variant/10">
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (evt.creator_username) {
+                              router.push(`/creator/${evt.creator_username}`);
+                            }
+                          }}
+                          className="flex items-center gap-2 group/creator hover:bg-surface-container-high px-2 py-1 -ml-2 rounded-lg transition-colors cursor-pointer relative"
+                        >
+                          <div className="relative">
+                            <img className="w-7 h-7 rounded-full border border-outline-variant/30 object-cover" src={evt.creator_avatar || `https://i.pravatar.cc/150?u=${evt.creator}`} alt={evt.creator} />
+                            {evt.creator_plan === 'elite' && (
+                               <div className="absolute -bottom-1 -right-1 bg-zinc-900 text-white text-[6px] font-black uppercase tracking-widest px-1 py-0.5 rounded-full shadow-lg border border-surface-container-lowest">
+                                  E
+                               </div>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-on-surface tracking-wide group-hover/creator:text-primary">{evt.creator}</span>
                         </div>
-                        <span className="text-xs font-bold text-on-surface tracking-wide group-hover/creator:text-primary">{evt.creator}</span>
+                        <div className="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-full text-[10px] font-bold text-on-surface-variant">
+                           <span className="material-symbols-outlined text-[12px]">group</span>
+                           {evt.attendees}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 bg-surface-container-high px-2 py-1 rounded-full text-[10px] font-bold text-on-surface-variant">
-                         <span className="material-symbols-outlined text-[12px]">group</span>
-                         {evt.attendees}
-                      </div>
-                    </div>
-                  </article>
-                ))
+                    </article>
+                  ))}
+                  
+                  {visibleEventsCount < selectedEvents.length && (
+                    <button 
+                      onClick={() => setVisibleEventsCount(prev => prev + 4)}
+                      className="w-full mt-2 py-3 bg-surface-container hover:bg-surface-container-high text-on-surface font-black uppercase tracking-widest text-xs rounded-xl border border-outline-variant/20 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                      Ver más eventos
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </aside>
