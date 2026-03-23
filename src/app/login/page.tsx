@@ -1,6 +1,40 @@
+"use client";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Login fallido");
+      
+      // Store session if needed manually, or Supabase handles cookies automatically 
+      // depends on implementation, but for now we just redirect.
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -17,15 +51,22 @@ export default function LoginPage() {
         </h2>
         <p className="mt-2 text-center text-sm text-on-surface-variant">
           ¿O eres nuevo aquí?{" "}
-          <a href="#" className="font-medium text-primary hover:text-primary-container">
+          <Link href="/register" className="font-medium text-primary hover:text-primary-container">
             Regístrate para empezar
-          </a>
+          </Link>
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-surface-container-lowest py-8 px-4 shadow-sm sm:rounded-2xl sm:px-10 border border-outline-variant/10">
-          <form className="space-y-6" action="#" method="POST">
+          
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 text-sm rounded-lg font-medium text-center">
+              {error}
+            </div>
+          )}
+
+          <form className="space-y-6" onSubmit={handleLogin}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-on-surface">
                 Correo Electrónico
@@ -36,6 +77,8 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="appearance-none block w-full px-4 py-3 border border-outline-variant/30 rounded-lg shadow-sm placeholder-on-surface-variant/50 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-surface-container-low"
                   placeholder="tucorreo@ejemplo.com"
@@ -53,6 +96,8 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="appearance-none block w-full px-4 py-3 border border-outline-variant/30 rounded-lg shadow-sm placeholder-on-surface-variant/50 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm bg-surface-container-low"
                   placeholder="••••••••"
@@ -83,9 +128,10 @@ export default function LoginPage() {
             <div>
               <button
                 type="submit"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-extrabold text-white bg-primary hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+                disabled={loading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-extrabold text-white bg-primary hover:bg-primary-container focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50"
               >
-                Inicia Sesión
+                {loading ? "Verificando..." : "Inicia Sesión"}
               </button>
             </div>
           </form>
