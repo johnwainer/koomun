@@ -76,21 +76,21 @@ export default function TopNavBar() {
           <div className="flex items-center gap-2">
             <Link 
               href="/notifications" 
-              className={`p-2 rounded-full transition-colors relative ${
+              className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors relative ${
                 pathname === "/notifications" ? "bg-surface-container-high text-primary" : "text-on-surface-variant hover:bg-[#f4f3f1] active:scale-95"
               }`}
             >
               <span className="material-symbols-outlined">notifications</span>
-              {pathname !== "/notifications" && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-surface-container-lowest"></span>}
+              {pathname !== "/notifications" && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-surface-container-lowest"></span>}
             </Link>
             <Link 
               href="/chat" 
-              className={`p-2 rounded-full transition-colors relative ${
+              className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors relative ${
                 pathname === "/chat" ? "bg-surface-container-high text-primary" : "text-on-surface-variant hover:bg-[#f4f3f1] active:scale-95"
               }`}
             >
               <span className="material-symbols-outlined">chat_bubble</span>
-              {pathname !== "/chat" && <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border border-surface-container-lowest"></span>}
+              {pathname !== "/chat" && <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-surface-container-lowest"></span>}
             </Link>
             <Link
               href="/profile"
