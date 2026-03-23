@@ -110,8 +110,8 @@ export default function CommunityLandingPage() {
 
   if (!community) return null;
 
-  const isPaid = community.price_tier === 'Pago';
-  const price = isPaid ? "Suscripción Premium" : "Gratis";
+  const isPaid = community.price_tier?.toLowerCase() !== 'gratis';
+  const price = isPaid ? community.price_tier : "Gratis";
   
   return (
     <>
@@ -165,9 +165,9 @@ export default function CommunityLandingPage() {
                     <span className="material-symbols-outlined text-[14px]">group</span> 12.4k miembros
                  </span>
                  {isPaid && (
-                    <span className="md:hidden px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-amber-500 text-amber-500">
-                       Paga
-                    </span>
+                  <span className="md:hidden px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-amber-500 text-amber-500">
+                     {community.price_tier}
+                  </span>
                  )}
               </div>
               
