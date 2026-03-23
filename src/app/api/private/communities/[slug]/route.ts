@@ -24,12 +24,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     if (isUUID) {
        query = query.eq('id', slug);
     } else {
-       query = query.ilike('title', slug.replace(/-/g, '%'));
+       query = query.ilike('title', '%' + slug.replace(/-/g, '%') + '%');
     }
 
-    const { data: community, error } = await query.single();
+    const { data: community, error } = await query.limit(1).maybeSingle();
 
     if (error) throw error;
+    if (!community) {
+      return NextResponse.json({ error: "Comunidad no encontrada" }, { status: 404 });
+    }
     
     // Check if the user is a member or the creator
     let isMember = false;
@@ -86,11 +89,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     if (isUUID) {
        query = query.eq('id', slug);
     } else {
-       query = query.ilike('title', slug.replace(/-/g, '%'));
+       query = query.ilike('title', '%' + slug.replace(/-/g, '%') + '%');
     }
 
-    const { data: community, error } = await query.single();
+    const { data: community, error } = await query.limit(1).maybeSingle();
+    
     if (error) throw error;
+    if (!community) {
+       return NextResponse.json({ error: "Comunidad no encontrada" }, { status: 404 });
+    }
 
     // Check if already member
     const { data: memberCheck } = await supabaseClient
