@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseClient, supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
        return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 });
     }
 
-    const { data, error } = await supabaseClient.from('feed_posts').insert({
+    const { data, error } = await supabaseAdmin.from('feed_posts').insert({
        community_id: communityId,
        author_id: user.id,
        media_url: type || 'General',
