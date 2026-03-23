@@ -33,7 +33,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     // 2. Get Communities
     const { data: communities } = await supabaseClient
       .from('communities')
-      .select('id, title, description, cover_image_url, price_tier, category:categories(name)')
+      .select('id, title, description, cover_image_url, price_tier, category:categories(name), members:members(count)')
       .eq('creator_id', profile.id)
       .eq('is_published', true);
 

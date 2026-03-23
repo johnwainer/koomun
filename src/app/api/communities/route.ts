@@ -13,7 +13,8 @@ export async function GET(req: Request) {
         cover_image_url,
         is_published,
         creator:profiles(id, full_name, username, avatar_url, plan),
-        category:categories(name)
+        category:categories(name),
+        members:members(count)
       `)
       .eq('is_published', true)
       .order('created_at', { ascending: false });

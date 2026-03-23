@@ -62,7 +62,7 @@ export default function DiscoverPage() {
             title: c.title,
             description: c.description || "",
             category: c.category?.name || "Varia",
-            members: Math.floor(Math.random() * 500) + " k", // Placeholder visual dinámico
+            members: c.members?.[0]?.count ? c.members[0].count.toString() : "0", 
             price: c.price_tier,
             image: c.cover_image_url || `https://picsum.photos/seed/${c.id}/400/250`,
             creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
@@ -295,7 +295,15 @@ export default function DiscoverPage() {
                 <div className="p-6 pt-8 flex flex-col flex-1">
                   <div className="flex justify-between items-start mb-2">
                      <div className="flex gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/10 px-2 py-1 rounded">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border ${
+                            [
+                              "text-blue-700 bg-blue-50 border-blue-200",
+                              "text-emerald-700 bg-emerald-50 border-emerald-200",
+                              "text-amber-700 bg-amber-50 border-amber-200",
+                              "text-purple-700 bg-purple-50 border-purple-200",
+                              "text-rose-700 bg-rose-50 border-rose-200"
+                            ][community.category.length % 5]
+                        }`}>
                           {community.category}
                         </span>
                      </div>
