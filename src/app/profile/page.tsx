@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
+import { supabaseClient } from "@/lib/supabase";
 
 type TabOption = "Cuenta" | "Comunidades" | "Notificaciones" | "Facturación" | "Privacidad";
 
@@ -20,7 +21,10 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchMe() {
        try {
-          const res = await fetch("/api/private/me");
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          const res = await fetch("/api/private/me", {
+             headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+          });
           if (res.ok) {
              const data = await res.json();
              setUser(data.user);
@@ -195,11 +199,17 @@ export default function ProfilePage() {
                   <form className="flex flex-col gap-6 max-w-2xl" onSubmit={async (e) => {
                      e.preventDefault();
                      setSaving(true);
-                     await fetch("/api/private/me", {
-                        method: "POST",
-                        body: JSON.stringify(profile),
-                        headers: { "Content-Type": "application/json" }
-                     });
+                     await (async () => {
+         const { data: { session } } = await supabaseClient.auth.getSession();
+         return fetch("/api/private/me", {
+            method: "POST",
+            body: JSON.stringify(profile),
+            headers: { 
+               "Content-Type": "application/json",
+               ...(session ? { Authorization: `Bearer ${session.access_token}` } : {})
+            }
+         });
+      })();
                      setSaving(false);
                   }}>
                     <div className="flex flex-col sm:flex-row gap-6">
@@ -460,11 +470,17 @@ export default function ProfilePage() {
                       e.preventDefault();
                       if(!password) return;
                       setSavingPassword(true);
-                      const res = await fetch("/api/private/security", {
-                        method: "PUT",
-                        body: JSON.stringify({ password }),
-                        headers: { "Content-Type": "application/json" }
-                      });
+                      const res = await (async () => {
+         const { data: { session } } = await supabaseClient.auth.getSession();
+         return fetch("/api/private/security", {
+            method: "PUT",
+            body: JSON.stringify({ password }),
+            headers: { 
+               "Content-Type": "application/json",
+               ...(session ? { Authorization: `Bearer ${session.access_token}` } : {})
+            }
+         });
+      })();
                       if(res.ok) {
                         alert("Contraseña actualizada con éxito");
                         setPassword("");
@@ -496,7 +512,13 @@ export default function ProfilePage() {
                       onClick={async () => {
                         if(confirm("¿Estás 100% seguro de que deseas eliminar tu cuenta permanentemente?")) {
                           setDeleting(true);
-                          const res = await fetch("/api/private/security", { method: "DELETE" });
+                          const res = await (async () => {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            return fetch("/api/private/security", {
+               method: "DELETE",
+               headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+            });
+         })();
                           if(res.ok) {
                             window.location.href = "/login";
                           } else {

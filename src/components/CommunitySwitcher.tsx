@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { supabaseClient } from "@/lib/supabase";
 
 export type MyCommunity = {
   id: string;
@@ -28,7 +29,10 @@ export default function CommunitySwitcher({ maxWidth = "max-w-7xl", activeId, on
   useEffect(() => {
     async function loadComms() {
        try {
-           const res = await fetch("/api/private/my-communities");
+           const { data: { session } } = await supabaseClient.auth.getSession();
+          const res = await fetch("/api/private/my-communities", {
+             headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+          });
            if (res.status === 401) {
               if (onLoad) onLoad([], "unauthorized");
               return;

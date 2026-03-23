@@ -5,6 +5,7 @@ import Link from "next/link";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
+import { supabaseClient } from "@/lib/supabase";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -23,7 +24,10 @@ export default function CommunityLandingPage() {
   useEffect(() => {
      async function loadCommunity() {
         try {
-           const res = await fetch(`/api/private/communities/${slug}`);
+           const { data: { session } } = await supabaseClient.auth.getSession();
+          const res = await fetch(`/api/private/communities/${slug}`, {
+             headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+          });
            if (res.status === 401) {
               setAccessError(true);
               setLoading(false);

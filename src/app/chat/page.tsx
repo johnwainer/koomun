@@ -5,6 +5,7 @@ import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
 import AccessMessage from "@/components/AccessMessage";
+import { supabaseClient } from "@/lib/supabase";
 
 type ChatUser = {
   id: string;
@@ -34,7 +35,10 @@ export default function ChatPage() {
   useEffect(() => {
      async function checkAuth() {
         try {
-           const res = await fetch("/api/private/chat");
+           const { data: { session } } = await supabaseClient.auth.getSession();
+          const res = await fetch("/api/private/chat", {
+             headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+          });
            if (res.status === 401) { setAuthStatus("unauthorized"); return; }
            
            if (res.ok) {

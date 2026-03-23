@@ -6,6 +6,7 @@ import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
 import AccessMessage from "@/components/AccessMessage";
+import { supabaseClient } from "@/lib/supabase";
 
 import { useEffect, useState } from "react";
 
@@ -17,7 +18,10 @@ export default function MyCommunitiesPage() {
   useEffect(() => {
     async function loadComms() {
        try {
-           const res = await fetch("/api/private/my-communities");
+           const { data: { session } } = await supabaseClient.auth.getSession();
+          const res = await fetch("/api/private/my-communities", {
+             headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+          });
            if (res.status === 401) {
               setAuthStatus("unauthorized");
               return;
