@@ -270,6 +270,22 @@ DECLARE
   i INT;
   j INT;
 BEGIN
+  -- 0. GENERATE SUPER ADMIN (OWNER)
+  new_uid := uuid_generate_v4();
+  INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
+  VALUES (new_uid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'johnwainer@gmail.com', crypt('123456', gen_salt('bf')), NOW(), 
+  json_build_object('full_name', 'John Wainer', 'username', 'johnwainer_admin'), NOW(), NOW());
+
+  all_uids := array_append(all_uids, new_uid);
+  users := array_append(users, new_uid);
+
+  UPDATE public.profiles SET 
+    role = 'super_admin', 
+    plan = 'elite', 
+    avatar_url = 'https://i.pravatar.cc/150?u=' || new_uid, 
+    bio = 'El Arquitecto del Sistema.' 
+  WHERE id = new_uid;
+
   -- 1. GENERATE 24 USERS (20 Creators, 4 Regular Users)
   FOR i IN 1..24 LOOP
     new_uid := uuid_generate_v4();
