@@ -230,18 +230,25 @@ export default function CreatorProfilePage() {
                            return (
                              <div key={idx} className="bg-surface-container-lowest border border-outline-variant/15 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all flex flex-col items-start text-left relative overflow-hidden group">
                                 <div className={`absolute top-0 right-0 w-32 h-32 bg-${pcolor}-500/5 rounded-full blur-3xl group-hover:bg-${pcolor}-500/10 transition-colors pointer-events-none`}></div>
-                                
-                                <div className="flex justify-between items-start w-full mb-4">
-                                   <span className={`bg-${pcolor}-500/10 text-${pcolor}-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1`}>
-                                      <span className="material-symbols-outlined text-[14px]">
-                                         {isPresencial ? 'location_on' : 'videocam'}
-                                      </span> 
-                                      {e.type}
-                                   </span>
-                                   <div className="text-right">
-                                      <span className="block text-xl font-black text-on-surface leading-none">{e.event_date}</span>
-                                   </div>
-                                </div>
+                                                                <div className="flex justify-between items-start w-full mb-4 gap-4">
+                                    <div className="flex flex-col gap-2 items-start shrink-0">
+                                       <span className={`bg-${pcolor}-500/10 text-${pcolor}-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1`}>
+                                          <span className="material-symbols-outlined text-[14px]">
+                                             {isPresencial ? 'location_on' : 'videocam'}
+                                          </span> 
+                                          {e.type}
+                                       </span>
+                                       {e.community?.title && (
+                                          <span className="border border-outline-variant/20 bg-surface-container-high text-on-surface px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                                             <span className="material-symbols-outlined text-[12px]">dataset</span> {e.community.title}
+                                          </span>
+                                       )}
+                                    </div>
+                                    <div className="text-right flex flex-col items-center justify-center bg-surface-container-highest p-2 rounded-xl border border-outline-variant/20 shadow-inner min-w-[60px]">
+                                       <span className="block text-xl font-black text-on-surface leading-none">{e.event_date?.split('-')[2] || '--'}</span>
+                                       <span className="text-[9px] font-bold text-primary uppercase tracking-widest mt-0.5 whitespace-nowrap">{e.event_date ? ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"][parseInt(e.event_date.split('-')[1]) - 1] : 'MES'}</span>
+                                    </div>
+                                 </div>
                                 
                                 <h4 className="font-extrabold text-xl text-on-surface mb-2 truncate max-w-[90%]">{e.title}</h4>
                                 <p className="text-sm text-on-surface-variant mb-6 line-clamp-2 pr-12">{e.description || "Evento exclusivo."}</p>

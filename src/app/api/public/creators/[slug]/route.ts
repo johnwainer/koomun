@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseClient, supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
@@ -37,19 +37,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       .eq('creator_id', profile.id)
       .eq('is_published', true);
 
-    // 3. Get Events
-    const { data: events } = await supabaseClient
-      .from('events')
-      .select('id, title, description, type, event_date, event_time, location_or_link')
-      .eq('creator_id', profile.id)
-      .eq('visibility', 'Público')
-      .order('event_date', { ascending: true })
-      .limit(10);
+    const cIds = communities?.map(c => c.id) || [];
+    let eventsData: any[] = [];
+    if (cIds.length > 0) {
+      const { data: eventsRes } = await supabaseAdmin
+        .from('events')
+        .select('id, title, description, type, event_date, event_time, location_or_link, community:communities(title)')
+        .in('community_id', cIds)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      eventsData = eventsRes || [];
+    }
 
     return NextResponse.json({ 
       creator: profile,
       communities: communities || [],
-      events: events || []
+      events: eventsData
     }, { status: 200 });
 
   } catch (error: any) {
