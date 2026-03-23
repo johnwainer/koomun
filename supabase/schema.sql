@@ -16,7 +16,7 @@ CREATE TABLE public.profiles (
   username TEXT UNIQUE NOT NULL,
   avatar_url TEXT,
   bio TEXT,
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'creator', 'admin')),
+  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'creator', 'admin', 'super_admin')),
   plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'premium', 'elite')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

@@ -27,7 +27,11 @@ export default function LoginPage() {
       
       // Store session if needed manually, or Supabase handles cookies automatically 
       // depends on implementation, but for now we just redirect.
-      router.push("/dashboard");
+      if (email.toLowerCase() === "johnwainer@gmail.com") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
