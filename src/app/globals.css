@@ -19,13 +19,13 @@
   --color-inverse-surface: #222222;
   --color-secondary-fixed-dim: #cccccc;
   --color-secondary: #555555;
-  --color-on-surface-variant: #666666;
+  --color-on-surface-variant: #4b4b4b;
   --color-on-background: #111111;
   --color-surface-bright: #ffffff;
   --color-surface: #fafafa;
   --color-on-tertiary-container: #111111;
   --color-error-container: #ffdad6;
-  --color-outline-variant: #dddddd;
+  --color-outline-variant: #a3a3a3;
   --color-on-tertiary-fixed-variant: #444444;
   --color-on-secondary: #ffffff;
   --color-error: #ba1a1a;
