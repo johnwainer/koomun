@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadFeed() {
@@ -123,16 +124,18 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeletePost = async (postId: string) => {
-    if(!confirm("¿Deseas eliminar esta publicación?")) return;
+  const handleDeletePost = async () => {
+    if(!deletingPostId) return;
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
-      const res = await fetch(`/api/private/feed/${postId}`, {
+      const res = await fetch(`/api/private/feed/${deletingPostId}`, {
          method: 'DELETE',
          headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
       });
-      if(res.ok) setPosts(prev => prev.filter(p => p.id !== postId));
-    } catch(err) { console.error(err); }
+      if(res.ok) setPosts(prev => prev.filter(p => p.id !== deletingPostId));
+    } catch(err) { console.error(err); } finally {
+      setDeletingPostId(null);
+    }
   };
 
   const handleSaveEdit = async (postId: string) => {
@@ -311,7 +314,7 @@ export default function DashboardPage() {
                                   <button onClick={() => { setEditingPostId(post.id); setEditingContent(post.content); setActiveMenuId(null); }} className="px-4 py-2 text-xs font-bold text-left hover:bg-surface-container-low text-on-surface transition-colors flex items-center gap-2">
                                      <span className="material-symbols-outlined text-[14px]">edit</span> Editar
                                   </button>
-                                  <button onClick={() => { handleDeletePost(post.id); setActiveMenuId(null); }} className="px-4 py-2 text-xs font-bold text-left hover:bg-rose-500/10 text-rose-600 transition-colors flex items-center gap-2">
+                                  <button onClick={() => { setDeletingPostId(post.id); setActiveMenuId(null); }} className="px-4 py-2 text-xs font-bold text-left hover:bg-rose-500/10 text-rose-600 transition-colors flex items-center gap-2">
                                      <span className="material-symbols-outlined text-[14px]">delete</span> Eliminar
                                   </button>
                                </div>
@@ -417,6 +420,29 @@ export default function DashboardPage() {
         </div>
         )}
       </main>
+
+      {/* Modal Eliminar Post */}
+      {deletingPostId && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+           <div className="bg-surface border border-outline-variant/20 rounded-3xl p-8 max-w-sm w-full shadow-2xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+              <div className="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-6 shrink-0">
+                 <span className="material-symbols-outlined text-3xl">delete_forever</span>
+              </div>
+              <h3 className="text-xl font-black text-on-surface mb-2">¿Eliminar publicación?</h3>
+              <p className="text-sm text-on-surface-variant font-medium leading-relaxed mb-8">Esta acción es permanente y no podrás recuperar este post ni suspender las interacciones vinculadas a él.</p>
+              
+              <div className="flex w-full gap-3">
+                 <button onClick={() => setDeletingPostId(null)} className="flex-1 py-3 px-4 bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface font-bold rounded-xl text-sm">
+                    Cancelar
+                 </button>
+                 <button onClick={handleDeletePost} className="flex-1 py-3 px-4 bg-rose-600 hover:bg-rose-700 transition-colors shadow-lg shadow-rose-600/20 text-white font-bold rounded-xl text-sm">
+                    Sí, Eliminar
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
       <BottomNavBar />
     </>
   );
