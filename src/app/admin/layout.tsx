@@ -100,6 +100,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
         
         <div className="p-4 border-t border-outline-variant/10">
+          <Link href="/dashboard" className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-primary hover:bg-primary/10 transition-colors font-bold text-sm mb-3 border border-primary/20">
+            <span className="material-symbols-outlined text-lg">public</span>
+            Ir a App (Modo Usuario)
+          </Link>
           <button 
             onClick={async () => {
               await supabaseClient.auth.signOut();

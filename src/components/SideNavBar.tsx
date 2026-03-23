@@ -2,9 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function SideNavBar() {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkRole() {
+       const { data } = await supabaseClient.auth.getSession();
+       if (data.session) {
+          const { data: profile } = await supabaseClient
+            .from("profiles")
+            .select("role")
+            .eq("id", data.session.user.id)
+            .single();
+            
+          if (profile?.role === "admin" || profile?.role === "super_admin") {
+             setIsAdmin(true);
+          }
+       }
+    }
+    checkRole();
+  }, []);
 
   const getLinkClass = (href: string) => {
     return pathname === href
@@ -39,6 +60,13 @@ export default function SideNavBar() {
           <span className="material-symbols-outlined text-primary">team_dashboard</span>
           <span className="font-bold text-primary">Estudio de Creador</span>
         </Link>
+        
+        {isAdmin && (
+           <Link href="/admin" className="flex items-center gap-3 px-4 py-3 bg-red-50 text-red-700 hover:bg-red-100 transition-colors rounded-lg mt-2">
+             <span className="material-symbols-outlined text-red-600">admin_panel_settings</span>
+             <span className="font-bold text-red-600">Panel Admin</span>
+           </Link>
+        )}
       </nav>
       <div className="mt-auto pt-6 border-t border-outline-variant/15">
         <Link href="/upgrade" className="flex items-center justify-center w-full mb-4 py-3 bg-gradient-to-r from-primary-container to-primary text-on-primary-container rounded-full font-bold text-xs tracking-wider uppercase active:scale-95 transition-transform">
