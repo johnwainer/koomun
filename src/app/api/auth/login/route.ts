@@ -19,10 +19,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
+    // Buscamos el rol real del usuario en la tabla Profiles
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
     // Devuelve los tokens para que Web/Apps móviles la guarden (ej. SecureStore en iOS/Android)
     return NextResponse.json({ 
       user: data.user, 
       session: data.session,
+      role: profile?.role || 'user',
       message: 'Login Exitoso' 
     }, { status: 200 });
 

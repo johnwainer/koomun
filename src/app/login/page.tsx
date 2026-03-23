@@ -26,8 +26,8 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.error || "Login fallido");
       
       // Store session if needed manually, or Supabase handles cookies automatically 
-      // depends on implementation, but for now we just redirect.
-      if (email.toLowerCase() === "johnwainer@gmail.com") {
+      // Dependiendo del rol en base de datos retornado por nuestra API
+      if (data.role === "super_admin" || data.role === "admin") {
         router.push("/admin");
       } else {
         router.push("/dashboard");

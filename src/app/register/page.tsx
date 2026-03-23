@@ -26,11 +26,7 @@ export default function RegisterPage() {
 
       if (!res.ok) throw new Error(data.error || "Fallo en el registro");
       
-      if (email.toLowerCase() === "johnwainer@gmail.com") {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message);
     } finally {

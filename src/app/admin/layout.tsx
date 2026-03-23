@@ -19,23 +19,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
 
-      // Validar si el email es el del super admin
-      if (session.user.email === "johnwainer@gmail.com") {
+      // Consultar su perfil para ver el rol directamente
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+        
+      if (profile?.role === "super_admin" || profile?.role === "admin") {
         setIsAdmin(true);
       } else {
-        // Consultar su perfil para ver si tiene rol super_admin manual
-        const { data: profile } = await supabaseClient
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-          
-        if (profile?.role === "super_admin") {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-          router.replace("/dashboard");
-        }
+        setIsAdmin(false);
+        router.replace("/dashboard");
       }
     }
 
