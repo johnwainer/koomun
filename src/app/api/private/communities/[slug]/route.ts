@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseClient, supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = "force-dynamic";
 
@@ -111,8 +111,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
        return NextResponse.json({ success: true, message: 'Ya eres miembro' }, { status: 200 });
     }
 
-    // Insert new member
-    const { error: insertError } = await supabaseClient
+    // Insert new member using Admin Client due to backend RLS execution context
+    const { error: insertError } = await supabaseAdmin
        .from('members')
        .insert({
           community_id: community.id,
