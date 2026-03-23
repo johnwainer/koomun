@@ -25,7 +25,7 @@ export default function NotificationsPage() {
      async function loadData() {
         try {
            const { data: { session } } = await supabaseClient.auth.getSession();
-          const res = await fetch("/api/private/notifications", {
+          const res = await fetch("/api/private/notifications", { cache: 'no-store', 
              headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
           });
            if (res.status === 401) { setAuthStatus("unauthorized"); return; }

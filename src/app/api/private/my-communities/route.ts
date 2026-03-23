@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 import { supabaseClient } from '@/lib/supabase';
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.replace('Bearer ', '').trim();
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    if (authError || !user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    if (authError || !user) return NextResponse.json({ error: "No autorizado", debug_error: authError, token_header: authHeader.substring(0, 20) + "..." }, { status: 401 });
     const session = { user };
 
     // Comunidades de las que el usuario es miembro

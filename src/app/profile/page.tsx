@@ -22,7 +22,7 @@ export default function ProfilePage() {
     async function fetchMe() {
        try {
           const { data: { session } } = await supabaseClient.auth.getSession();
-          const res = await fetch("/api/private/me", {
+          const res = await fetch("/api/private/me", { cache: 'no-store', 
              headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
           });
           if (res.ok) {

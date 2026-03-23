@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { supabaseClient } from '@/lib/supabase';
 
+export const dynamic = "force-dynamic";
+
 // Change password
 export async function PUT(req: Request) {
   try {

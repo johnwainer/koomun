@@ -36,7 +36,7 @@ export default function ChatPage() {
      async function checkAuth() {
         try {
            const { data: { session } } = await supabaseClient.auth.getSession();
-          const res = await fetch("/api/private/chat", {
+          const res = await fetch("/api/private/chat", { cache: 'no-store', 
              headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
           });
            if (res.status === 401) { setAuthStatus("unauthorized"); return; }

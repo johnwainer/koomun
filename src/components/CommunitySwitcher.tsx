@@ -30,7 +30,7 @@ export default function CommunitySwitcher({ maxWidth = "max-w-7xl", activeId, on
     async function loadComms() {
        try {
            const { data: { session } } = await supabaseClient.auth.getSession();
-          const res = await fetch("/api/private/my-communities", {
+          const res = await fetch("/api/private/my-communities", { cache: 'no-store', 
              headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
           });
            if (res.status === 401) {

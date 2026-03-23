@@ -25,7 +25,7 @@ export default function CommunityLandingPage() {
      async function loadCommunity() {
         try {
            const { data: { session } } = await supabaseClient.auth.getSession();
-          const res = await fetch(`/api/private/communities/${slug}`, {
+          const res = await fetch(`/api/private/communities/${slug}`, { cache: 'no-store', 
              headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
           });
            if (res.status === 401) {
