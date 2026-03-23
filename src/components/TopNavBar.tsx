@@ -2,14 +2,20 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabase";
 
 export default function TopNavBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleLogout = async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = '/login';
+  };
 
   useEffect(() => {
      async function checkUser() {
@@ -117,13 +123,22 @@ export default function TopNavBar() {
             {loading ? (
               <div className="w-10 h-10 rounded-full bg-surface-container-high animate-pulse ml-2"></div>
             ) : user ? (
-              <Link
-                href="/profile"
-                className="flex items-center justify-center w-10 h-10 rounded-full border border-outline-variant/20 hover:border-primary/50 transition-colors overflow-hidden shrink-0 ml-2 bg-primary/10 text-primary font-black uppercase"
-                title="Mi Perfil"
-              >
-                {user.email ? user.email.charAt(0) : "U"}
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/profile"
+                  className="flex items-center justify-center w-10 h-10 rounded-full border border-outline-variant/20 hover:border-primary/50 transition-colors overflow-hidden shrink-0 ml-2 bg-primary/10 text-primary font-black uppercase"
+                  title="Mi Perfil"
+                >
+                  {user.email ? user.email.charAt(0) : "U"}
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                  title="Cerrar Sesión"
+                >
+                  <span className="material-symbols-outlined text-[20px]">logout</span>
+                </button>
+              </div>
             ) : (
               <Link
                 href="/login"
