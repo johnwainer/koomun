@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   try {
-    const { slug } = await params;
+    const rawSlug = (await params).slug;
+    const slug = decodeURIComponent(rawSlug);
     
     const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slug);
 
@@ -23,7 +24,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ slug:
     } else {
        query = query.ilike('title', '%' + slug.replace(/-/g, '%') + '%');
     }
-    const { data: comm, error: commError } = await query.single();
+    const { data: comm, error: commError } = await query.limit(1).maybeSingle();
     if (commError || !comm) return NextResponse.json({ error: "Comunidad no encontrada" }, { status: 404 });
 
     // Prevent creator from leaving mapping if business rule says creator shouldn't normally do it, but we can just delete it anyway.

@@ -117,7 +117,7 @@ export default function CommunityLandingPage() {
      try {
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return router.push('/login');
-        const res = await fetch(`/api/private/communities/${slug}/leave`, {
+        const res = await fetch(`/api/private/communities/${encodeURIComponent(slug)}/leave`, {
            method: "DELETE",
            headers: { Authorization: `Bearer ${session.access_token}` }
         });
