@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
+import AccessMessage from "@/components/AccessMessage";
 
 type Notification = {
   id: string;
@@ -24,6 +26,19 @@ const mockNotifs: Notification[] = [
 ];
 
 export default function NotificationsPage() {
+  const [authStatus, setAuthStatus] = useState<"pending" | "success" | "unauthorized">("pending");
+
+  useEffect(() => {
+     async function checkAuth() {
+        try {
+           const res = await fetch("/api/private/notifications");
+           if (res.status === 401) { setAuthStatus("unauthorized"); return; }
+           setAuthStatus("success");
+        } catch(e) { setAuthStatus("unauthorized"); }
+     }
+     checkAuth();
+  }, []);
+
   const unreadCount = mockNotifs.filter(n => !n.read).length;
 
   return (
@@ -31,7 +46,15 @@ export default function NotificationsPage() {
       <TopNavBar />
       <SideNavBar />
 
-      <main className="lg:ml-64 pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto min-h-screen bg-surface">
+      <main className="lg:ml-64 pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto min-h-screen bg-surface flex flex-col">
+        {authStatus === "pending" ? (
+           <div className="flex-1 flex flex-col items-center justify-center">
+             <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
+           </div>
+        ) : authStatus === "unauthorized" ? (
+           <AccessMessage type="unauthorized" title="Debes iniciar sesión" description="Inicia sesión para revisar tus notificaciones y ver quién ha interactuado con tu contenido." icon="notifications" />
+        ) : (
+        <>
         <header className="mb-8 flex flex-col sm:flex-row items-start sm:items-end gap-4 justify-between border-b border-outline-variant/10 pb-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tighter text-on-surface flex flex-wrap items-center gap-2 sm:gap-3">
@@ -86,6 +109,8 @@ export default function NotificationsPage() {
             </div>
           ))}
         </section>
+        </>
+        )}
 
       </main>
       <BottomNavBar />

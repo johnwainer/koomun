@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
+import AccessMessage from "@/components/AccessMessage";
 
 type ChatUser = {
   id: string;
@@ -26,6 +27,18 @@ export default function ChatPage() {
   const [activeChat, setActiveChat] = useState<ChatUser>(mockContacts[0]);
   const [showChatOnMobile, setShowChatOnMobile] = useState(false);
   const [message, setMessage] = useState("");
+  const [authStatus, setAuthStatus] = useState<"pending" | "success" | "unauthorized">("pending");
+
+  useEffect(() => {
+     async function checkAuth() {
+        try {
+           const res = await fetch("/api/private/chat");
+           if (res.status === 401) { setAuthStatus("unauthorized"); return; }
+           setAuthStatus("success");
+        } catch(e) { setAuthStatus("unauthorized"); }
+     }
+     checkAuth();
+  }, []);
 
   const mockMessages = [
     { sender: "me", text: "Hola Esteban, ¿cómo vas con la integración en Vercel?", time: "10:30 AM" },
@@ -40,6 +53,13 @@ export default function ChatPage() {
       <SideNavBar />
 
       <main className="lg:ml-64 pt-20 pb-16 h-screen flex flex-col bg-surface">
+        {authStatus === "pending" ? (
+           <div className="flex-1 flex flex-col items-center justify-center">
+             <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
+           </div>
+        ) : authStatus === "unauthorized" ? (
+           <AccessMessage type="unauthorized" title="Debes iniciar sesión" description="Inicia sesión para hablar con miembros y creadores de otros ecosistemas." icon="chat_bubble" />
+        ) : (
         <div className="flex-1 max-w-7xl mx-auto w-full flex bg-surface-container-lowest lg:rounded-2xl lg:shadow-sm overflow-hidden border-x border-b lg:border-t lg:my-6 border-outline-variant/10">
           
           {/* Sidebar Chats */}
@@ -175,6 +195,7 @@ export default function ChatPage() {
           </section>
 
         </div>
+        )}
       </main>
       <BottomNavBar />
     </>

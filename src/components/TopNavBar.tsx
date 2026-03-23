@@ -1,12 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function TopNavBar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+     async function checkUser() {
+        const { data } = await supabaseClient.auth.getSession();
+        if (data.session?.user) {
+           setUser(data.session.user);
+        }
+        setLoading(false);
+     }
+     checkUser();
+  }, []);
 
   return (
     <header className="fixed top-0 w-full z-50 bg-[#faf9f7] backdrop-blur-xl bg-opacity-80 border-b border-outline-variant/10">
@@ -100,13 +114,26 @@ export default function TopNavBar() {
               <span className="material-symbols-outlined">chat_bubble</span>
               {pathname !== "/chat" && <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-surface-container-lowest"></span>}
             </Link>
-            <Link
-              href="/profile"
-              className="flex items-center justify-center w-10 h-10 rounded-full border border-outline-variant/20 hover:border-primary/50 transition-colors overflow-hidden shrink-0 ml-2"
-              title="Mi Perfil"
-            >
-              <img src="https://i.pravatar.cc/150?u=current_user" alt="Avatar" className="w-full h-full object-cover" />
-            </Link>
+            {loading ? (
+              <div className="w-10 h-10 rounded-full bg-surface-container-high animate-pulse ml-2"></div>
+            ) : user ? (
+              <Link
+                href="/profile"
+                className="flex items-center justify-center w-10 h-10 rounded-full border border-outline-variant/20 hover:border-primary/50 transition-colors overflow-hidden shrink-0 ml-2 bg-primary/10 text-primary font-black uppercase"
+                title="Mi Perfil"
+              >
+                {user.email ? user.email.charAt(0) : "U"}
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center gap-2 h-10 px-4 rounded-full border border-outline-variant/20 hover:border-primary/50 hover:bg-surface-container-low transition-colors shrink-0 ml-2 text-sm font-bold text-on-surface"
+                title="Iniciar Sesión"
+              >
+                <span className="material-symbols-outlined text-[18px]">person</span>
+                <span className="hidden md:inline">Iniciar Sesión</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
