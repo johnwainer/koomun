@@ -7,10 +7,12 @@ export async function GET(req: Request) {
     const communityId = url.searchParams.get('communityId');
     
     // Auth Validation
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
+        const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError || !user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const session = { user };
 
     if (!communityId) {
         return NextResponse.json({ error: "Comunidad no especificada" }, { status: 400 });

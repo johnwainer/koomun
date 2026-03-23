@@ -10,10 +10,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     const id = idMatch ? idMatch[0] : slug;
     
     // Auth Validation
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
+        const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError || !user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const session = { user };
 
     const { data: community, error } = await supabaseClient
       .from('communities')

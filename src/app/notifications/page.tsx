@@ -87,8 +87,12 @@ export default function NotificationsPage() {
                }`}
              >
                 <div className="relative shrink-0">
-                  <div className="w-12 h-12 bg-surface-container-high rounded-full border border-outline-variant/20 flex flex-col justify-center items-center">
-                     <span className="material-symbols-outlined text-outline-variant">person</span>
+                  <div className="w-12 h-12 bg-surface-container-high rounded-full border border-outline-variant/20 flex flex-col justify-center items-center overflow-hidden">
+                     {notif.actor?.avatar_url ? (
+                        <img src={notif.actor.avatar_url} alt="actor" className="w-full h-full object-cover" />
+                     ) : (
+                        <span className="material-symbols-outlined text-outline-variant">person</span>
+                     )}
                   </div>
                   <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-white border-2 border-surface-container-lowest shadow-sm ${
                     notif.type === 'like' ? 'bg-pink-500' :
@@ -105,7 +109,7 @@ export default function NotificationsPage() {
                 
                 <div className="flex-1 flex flex-col justify-center">
                   <p className="text-sm text-on-surface leading-snug">
-                    <span className="font-bold">{notif.title || "Notificación"}</span> <span className="font-semibold text-primary">{notif.content}</span>
+                    <span className="font-bold">{notif.actor?.first_name || "Alguien"}</span> {notif.action_text} <span className="font-semibold text-primary">{notif.target_text}</span>
                   </p>
                   <p className="text-xs text-on-surface-variant mt-1 font-medium">{new Date(notif.created_at).toLocaleDateString()}</p>
                 </div>

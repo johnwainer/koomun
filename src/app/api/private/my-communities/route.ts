@@ -3,11 +3,12 @@ import { supabaseClient } from '@/lib/supabase';
 
 export async function GET(req: Request) {
   try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    
-    if (!session) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError || !user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    const session = { user };
 
     // Comunidades de las que el usuario es miembro
     const { data: memberOf } = await supabaseClient
