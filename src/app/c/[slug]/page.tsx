@@ -160,9 +160,19 @@ export default function CommunityLandingPage() {
            {/* Title & Info */}
            <div className="mb-12">
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                 <span className="text-xs font-black tracking-widest uppercase bg-surface-container-high text-on-surface px-2 py-1 rounded">Desarrollo & Tech</span>
+                 <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded border ${
+                    [
+                      "text-blue-700 bg-blue-50 border-blue-200",
+                      "text-emerald-700 bg-emerald-50 border-emerald-200",
+                      "text-amber-700 bg-amber-50 border-amber-200",
+                      "text-purple-700 bg-purple-50 border-purple-200",
+                      "text-rose-700 bg-rose-50 border-rose-200"
+                    ][(community.category?.name || 'Comunidad').length % 5]
+                 }`}>
+                     {community.category?.name || 'Comunidad'}
+                 </span>
                  <span className="text-xs font-black tracking-widest uppercase flex items-center gap-1 text-on-surface-variant">
-                    <span className="material-symbols-outlined text-[14px]">group</span> 12.4k miembros
+                    <span className="material-symbols-outlined text-[14px]">group</span> {community.members?.[0]?.count ? community.members[0].count : '0'} miembros
                  </span>
                  {isPaid && (
                   <span className="md:hidden px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-amber-500 text-amber-500">
