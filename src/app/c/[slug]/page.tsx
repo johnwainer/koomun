@@ -279,7 +279,9 @@ export default function CommunityLandingPage() {
                           <div key={evt.id} className="flex flex-col md:flex-row gap-4 p-5 rounded-2xl bg-surface-container-high/30 border border-outline-variant/10 hover:border-primary/30 transition-colors group">
                              <div className="shrink-0 w-16 h-16 rounded-xl bg-surface-container-highest flex flex-col items-center justify-center text-center shadow-inner">
                                 <span className="text-xl font-black text-on-surface leading-none">{evt.event_date?.split('-')[2]}</span>
-                                <span className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">MES</span>
+                                <span className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">
+                                    {evt.event_date ? ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"][parseInt(evt.event_date.split('-')[1]) - 1] || 'MES' : 'MES'}
+                                </span>
                              </div>
                              <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
