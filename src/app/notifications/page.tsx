@@ -74,9 +74,8 @@ export default function NotificationsPage() {
 
         <section className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/10 overflow-hidden">
           {notifications.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center opacity-70">
-              <span className="material-symbols-outlined text-4xl mb-4 text-outline-variant">notifications_paused</span>
-              <p className="font-bold text-on-surface-variant">No tienes notificaciones pendientes.</p>
+            <div className="flex-1 w-full flex items-center justify-center p-8 bg-surface">
+              <AccessMessage type="empty" title="Buzón de Notificaciones Vacío" description="Aún no tienes notificaciones pendientes ni actividad reciente." icon="notifications_paused" />
             </div>
           ) : (
             notifications.map((notif, idx) => (
