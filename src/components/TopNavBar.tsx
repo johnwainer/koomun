@@ -1,15 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function TopNavBar() {
   const pathname = usePathname();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <header className="fixed top-0 w-full z-50 bg-[#faf9f7] backdrop-blur-xl bg-opacity-80 border-b border-outline-variant/10">
-      <div className="flex items-center justify-between px-8 h-16 w-full font-medium">
-        <div className="flex items-center gap-8">
+      <div className="flex items-center justify-between px-4 md:px-8 h-16 w-full font-medium">
+        <div className="flex items-center gap-4 md:gap-8">
+          <button 
+            className="md:hidden flex items-center justify-center p-2 -ml-2 text-on-surface-variant hover:text-on-surface transition-colors"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <span className="material-symbols-outlined">{isMenuOpen ? 'close' : 'menu'}</span>
+          </button>
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
               <span className="material-symbols-outlined text-lg">auto_awesome</span>
@@ -102,6 +110,59 @@ export default function TopNavBar() {
           </div>
         </div>
       </div>
+      {/* Mobile Dropdown Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 w-full bg-[#faf9f7] border-b border-outline-variant/10 shadow-lg flex flex-col py-4 px-6 gap-4">
+          <Link
+            href="/creators"
+            onClick={() => setIsMenuOpen(false)}
+            className={`font-semibold flex items-center gap-2 transition-colors duration-200 px-3 py-2 rounded-lg ${
+              pathname === "/creators" || pathname === "/leaderboard"
+                ? "text-primary bg-primary/10"
+                : "text-on-surface-variant hover:bg-surface-container-low"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
+            Creadores Elite
+          </Link>
+          <Link
+            href="/"
+            onClick={() => setIsMenuOpen(false)}
+            className={`font-semibold flex items-center gap-2 transition-colors duration-200 px-3 py-2 rounded-lg ${
+              pathname === "/"
+                ? "text-on-surface bg-surface-container-high"
+                : "text-on-surface-variant hover:bg-surface-container-low"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">explore</span>
+            Explorar
+          </Link>
+          <Link
+            href="/categories"
+            onClick={() => setIsMenuOpen(false)}
+            className={`font-semibold flex items-center gap-2 transition-colors duration-200 px-3 py-2 rounded-lg ${
+              pathname === "/categories"
+                ? "text-on-surface bg-surface-container-high"
+                : "text-on-surface-variant hover:bg-surface-container-low"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">category</span>
+            Categorías
+          </Link>
+          <Link
+            href="/trending"
+            onClick={() => setIsMenuOpen(false)}
+            className={`font-semibold flex items-center gap-2 transition-colors duration-200 px-3 py-2 rounded-lg ${
+              pathname === "/trending"
+                ? "text-on-surface bg-surface-container-high"
+                : "text-on-surface-variant hover:bg-surface-container-low"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">trending_up</span>
+            Tendencias
+          </Link>
+        </div>
+      )}
     </header>
   );
 }
