@@ -1,4 +1,5 @@
 "use client";
+import { supabaseClient } from "@/lib/supabase";
 
 import { useEffect, useState } from "react";
 
@@ -21,7 +22,7 @@ export default function AdminPage() {
       try {
         const res = await fetch('/api/admin/users', {
             // Ejemplo de requerimiento Authorization que puedes inyectar 
-            // headers: { Authorization: `Bearer admin-token-1234` }
+            headers: { Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` }
         });
         const d = await res.json();
         setUsers(d.users || []);
@@ -113,7 +114,7 @@ export default function AdminPage() {
                            try {
                              const r = await fetch('/api/admin/users/role', {
                                method: 'PUT',
-                               headers: { 'Content-Type': 'application/json' },
+                               headers: { "Content-Type": "application/json", Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` },
                                body: JSON.stringify({ userId: u.id, newRole })
                              });
                              if (r.ok) {
@@ -150,7 +151,7 @@ export default function AdminPage() {
                            try {
                              const res = await fetch('/api/admin/users', {
                                method: 'DELETE',
-                               headers: { 'Content-Type': 'application/json' },
+                               headers: { "Content-Type": "application/json", Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` },
                                body: JSON.stringify({ userId: u.id })
                              });
 

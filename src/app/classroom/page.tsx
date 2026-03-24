@@ -82,7 +82,7 @@ export default function ClassroomPage() {
            setCourses(mappedCourses);
         }
       } catch (err) {
-        console.error(err);
+        
       } finally {
         setLoading(false);
       }

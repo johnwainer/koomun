@@ -1,4 +1,5 @@
 "use client";
+import { supabaseClient } from "@/lib/supabase";
 
 import { useEffect, useState } from "react";
 
@@ -24,7 +25,7 @@ export default function AdminLogsPage() {
   useEffect(() => {
     async function fetchLogs() {
       try {
-        const res = await fetch('/api/admin/logs');
+        const res = await fetch("", { headers: { Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` } });
         const data = await res.json();
         setLogs(data.logs || []);
       } catch (e) {

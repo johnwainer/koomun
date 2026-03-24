@@ -31,7 +31,7 @@ export default function CreatorProfilePage() {
         setCommunities(data.communities || []);
         setEvents(data.events || []);
       } catch (err) {
-        console.error("Failed to load profile", err);
+        
       } finally {
         setLoading(false);
       }

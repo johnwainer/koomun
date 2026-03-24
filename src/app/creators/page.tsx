@@ -40,7 +40,7 @@ export default function CreatorsPage() {
           setCreators(mapped);
         }
       } catch (e) {
-        console.error(e);
+        
       } finally {
         setLoading(false);
       }

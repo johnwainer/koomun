@@ -47,7 +47,7 @@ export default function ProfilePage() {
             setMyCommunities(data.communities || []);
           }
         } catch (e) {
-          console.error(e);
+          
         }
       }
     }

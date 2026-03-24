@@ -1,4 +1,5 @@
 "use client";
+import { supabaseClient } from "@/lib/supabase";
 
 import { useEffect, useState } from "react";
 
@@ -9,7 +10,7 @@ export default function AdminFeedPage() {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/feed");
+      const res = await fetch("", { headers: { Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` } });
       const data = await res.json();
       if (data.posts) setPosts(data.posts);
     } catch (e) {

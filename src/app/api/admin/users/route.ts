@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logAction } from '@/lib/audit';
 
 export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth.error) return auth.error;
+
   try {
     // PROTECCIÓN ESTRICTA: Solo las peticiones con Header Admin-Token válido o Supabase Auth JWT de Admin podrían entrar.
     // Ej: const authHeader = req.headers.get('Authorization'); -> Validar token.
@@ -26,6 +30,9 @@ export async function GET(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth.error) return auth.error;
+
   try {
     const { userId } = await req.json();
 

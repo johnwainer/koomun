@@ -84,7 +84,7 @@ export default function CalendarPage() {
              setApiEvents(mapped);
           }
        } catch (err) {
-          console.error(err);
+          
        }
     }
     loadEvents();

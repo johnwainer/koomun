@@ -1,4 +1,5 @@
 "use client";
+import { supabaseClient } from "@/lib/supabase";
 
 import { useEffect, useState } from "react";
 
@@ -25,7 +26,7 @@ export default function AdminContentPage() {
   useEffect(() => {
     async function fetchContent() {
       try {
-        const res = await fetch('/api/admin/communities');
+        const res = await fetch("", { headers: { Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` } });
         const d = await res.json();
         setCommunities(d.communities || []);
         setLoading(false);
@@ -41,7 +42,7 @@ export default function AdminContentPage() {
     try {
       const res = await fetch('/api/admin/communities', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` },
         body: JSON.stringify({ id, is_published: !currentlyPublished })
       });
       if (res.ok) {
@@ -59,7 +60,7 @@ export default function AdminContentPage() {
     try {
       const res = await fetch('/api/admin/communities', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` },
         body: JSON.stringify({ id })
       });
       if (res.ok) {

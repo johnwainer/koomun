@@ -48,7 +48,7 @@ export default function CategoriesPage() {
           setCategories(mapped);
         }
       } catch (e) {
-        console.error("Error", e);
+        
       } finally {
         setLoading(false);
       }

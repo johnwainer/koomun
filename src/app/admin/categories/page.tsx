@@ -1,4 +1,5 @@
 "use client";
+import { supabaseClient } from "@/lib/supabase";
 
 import { useEffect, useState } from "react";
 
@@ -22,7 +23,7 @@ export default function AdminCategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/admin/categories');
+      const res = await fetch("", { headers: { Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` } });
       const d = await res.json();
       setCategories(d.categories || []);
     } catch (error) {
@@ -42,7 +43,7 @@ export default function AdminCategoriesPage() {
     try {
       const res = await fetch('/api/admin/categories', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` },
         body: JSON.stringify({ name: newName, icon: newIcon })
       });
       if (res.ok) {
@@ -65,7 +66,7 @@ export default function AdminCategoriesPage() {
     try {
       const res = await fetch('/api/admin/categories', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` },
         body: JSON.stringify({ id })
       });
       if (res.ok) {

@@ -1,4 +1,5 @@
 "use client";
+import { supabaseClient } from "@/lib/supabase";
 
 import { useEffect, useState } from "react";
 
@@ -9,7 +10,7 @@ export default function AdminEventsPage() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/events");
+      const res = await fetch("", { headers: { Authorization: `Bearer ${(await supabaseClient.auth.getSession()).data.session?.access_token}` } });
       const data = await res.json();
       if (data.events) setEvents(data.events);
     } catch (e) {

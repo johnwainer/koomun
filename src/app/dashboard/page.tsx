@@ -58,7 +58,7 @@ export default function MyCommunitiesPage() {
               }
            }
        } catch (e) {
-           console.error(e);
+           
            setAuthStatus("empty");
        }
     }

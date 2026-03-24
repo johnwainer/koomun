@@ -49,7 +49,7 @@ export default function CommunityLandingPage() {
               setIsMember(data.isMember || false);
            }
         } catch(e) {
-           console.error(e);
+           
         } finally {
            setLoading(false);
         }
@@ -100,11 +100,11 @@ export default function CommunityLandingPage() {
            router.push('/dashboard');
         } else {
            const err = await res.json();
-           console.error("Join Error:", err);
+           
            alert("Hubo un error al intentar unir a la comunidad.");
         }
      } catch(e) {
-        console.error(e);
+        
      } finally {
         setJoining(false);
      }
@@ -125,11 +125,11 @@ export default function CommunityLandingPage() {
            router.push('/dashboard');
         } else {
            const err = await res.json();
-           console.error("Leave Error:", err);
+           
            alert(err.error || "Hubo un error al intentar salir.");
         }
      } catch(e) {
-        console.error(e);
+        
      } finally {
         setLeaving(false);
      }

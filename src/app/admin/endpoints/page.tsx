@@ -1,4 +1,5 @@
 "use client";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function AdminEndpointsPage() {
   const endpoints = [

@@ -66,7 +66,7 @@ export default function DashboardPage() {
            setPosts(data.posts || []);
         }
       } catch (err) {
-        console.error(err);
+        
       } finally {
         setLoading(false);
       }
@@ -89,7 +89,7 @@ export default function DashboardPage() {
          setNewPostType("General");
       }
     } catch(err) {
-       console.error(err);
+       
     } finally {
        setIsPosting(false);
        // Hacky refetch
@@ -120,7 +120,7 @@ export default function DashboardPage() {
          setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count: Math.max(0, (p.likes_count || 0) - 1) } : p));
       }
     } catch(err) {
-       console.error(err);
+       
     }
   };
 
@@ -133,7 +133,7 @@ export default function DashboardPage() {
          headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
       });
       if(res.ok) setPosts(prev => prev.filter(p => p.id !== deletingPostId));
-    } catch(err) { console.error(err); } finally {
+    } catch(err) {  } finally {
       setDeletingPostId(null);
     }
   };
@@ -150,7 +150,7 @@ export default function DashboardPage() {
          setPosts(prev => prev.map(p => p.id === postId ? { ...p, content: editingContent } : p));
          setEditingPostId(null);
       }
-    } catch(err) { console.error(err); }
+    } catch(err) {  }
   };
 
   const filters = ["Todos", "General", "Preguntas", "Recursos", "Showcase"];

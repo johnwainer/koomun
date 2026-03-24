@@ -72,7 +72,7 @@ export default function DiscoverPage() {
           setMockCommunities(mapped);
         }
       } catch (e) {
-        console.error("Failed fetching", e);
+        
       } finally {
         setLoading(false);
       }

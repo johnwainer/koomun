@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logAction } from '@/lib/audit';
 
 export async function GET(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth.error) return auth.error;
+
   try {
     const { data, error } = await supabaseAdmin
       .from('feed_posts')
@@ -17,6 +21,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth.error) return auth.error;
+
   try {
     const body = await req.json();
     
@@ -47,6 +54,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const auth = await requireAdmin(req);
+  if (auth.error) return auth.error;
+
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
