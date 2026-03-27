@@ -32,12 +32,7 @@ export default function CommunityLandingPage() {
           const res = await fetch(`/api/private/communities/${slug}`, { cache: 'no-store', 
              headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
           });
-           if (res.status === 401) {
-              setAccessError(true);
-              setLoading(false);
-              return;
-           }
-           if (res.status === 403) {
+           if (res.status === 401 || res.status === 403) {
               setAccessError(true);
               setLoading(false);
               return;
@@ -92,9 +87,14 @@ export default function CommunityLandingPage() {
      setJoining(true);
      try {
         const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+           router.push('/login');
+           return;
+        }
+
         const res = await fetch(`/api/private/communities/${slug}`, {
            method: "POST",
-           headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+           headers: { Authorization: `Bearer ${session.access_token}` }
         });
         if (res.ok) {
            router.push('/dashboard');

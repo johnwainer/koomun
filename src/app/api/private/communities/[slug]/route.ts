@@ -9,15 +9,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     
     const isUUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slug);
 
-    // Auth Validation
+    // Auth Validation (Optional for GET)
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    if (authError || !user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    const session = { user };
+    let session = null;
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+      if (!authError && user) session = { user };
+    }
 
-    let query = supabaseClient
+    let query = supabaseAdmin
       .from('communities')
       .select('id, title, description, cover_image_url, is_published, price_tier, creator_id, creator:profiles(full_name, avatar_url, plan), members:members(count), category:categories(name)');
 
@@ -36,18 +37,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     
     // Check if the user is a member or the creator
     let isMember = false;
-    if (community.creator_id === session.user.id) {
-       isMember = true;
-    } else {
-       const { data: memberCheck } = await supabaseClient
-          .from('members')
-          .select('id')
-          .eq('community_id', community.id)
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-       if (memberCheck) {
+    if (session) {
+       if (community.creator_id === session.user.id) {
           isMember = true;
+       } else {
+          const { data: memberCheck } = await supabaseClient
+             .from('members')
+             .select('id')
+             .eq('community_id', community.id)
+             .eq('user_id', session.user.id)
+             .maybeSingle();
+
+          if (memberCheck) {
+             isMember = true;
+          }
        }
     }
 
