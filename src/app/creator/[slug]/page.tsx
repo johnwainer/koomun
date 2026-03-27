@@ -77,8 +77,12 @@ export default function CreatorProfilePage() {
                {/* Head Visual con la foto y botones */}
                <div className="flex flex-col md:flex-row justify-between md:items-end -mt-12 md:-mt-16 mb-8 gap-4">
                   <div className="relative z-10 shrink-0 self-start">
-                     <div className={`w-28 h-28 md:w-36 md:h-36 rounded-full border-[6px] bg-surface-container-highest shadow-xl overflow-hidden ${isElite ? 'border-zinc-900' : 'border-surface'}`}>
-                        <img src={creator?.avatar_url || `https://i.pravatar.cc/150?u=${creator.id}`} alt="Creator Avatar" className="w-full h-full object-cover" />
+                     <div className={`w-28 h-28 md:w-36 md:h-36 rounded-full border-[6px] bg-surface-container-highest flex items-center justify-center font-black text-5xl uppercase tracking-widest text-primary shadow-xl overflow-hidden ${isElite ? 'border-zinc-900' : 'border-surface'}`}>
+                        {creator?.avatar_url ? (
+                           <img src={creator.avatar_url} alt="Creator Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                           (creator?.full_name || creator?.username || 'U').charAt(0)
+                        )}
                      </div>
                      {isElite && (
                         <div className="absolute -bottom-3 md:-bottom-4 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[10px] uppercase font-black tracking-widest px-3 py-1 rounded-full shadow-lg border-2 border-surface-container-lowest">

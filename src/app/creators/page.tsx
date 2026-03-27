@@ -35,7 +35,7 @@ export default function CreatorsPage() {
             followers: c.total_members >= 1000 ? (c.total_members/1000).toFixed(1) + "k" : c.total_members.toString(), 
             communities: c.active_communities_count || 0,
             isElite: c.plan === 'elite',
-            image: c.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`
+            image: c.avatar_url
           }));
           setCreators(mapped);
         }
@@ -112,8 +112,12 @@ export default function CreatorsPage() {
                      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none group-hover:from-primary/10 transition-colors"></div>
 
                      <div className="relative mb-6 z-10 w-24 h-24 mt-2">
-                        <div className={`w-24 h-24 rounded-full overflow-hidden shadow-xl border-[4px] ${creator.isElite ? 'border-zinc-900' : 'border-surface'} transition-all`}>
-                           <img src={creator.image} alt={creator.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className={`w-24 h-24 rounded-full overflow-hidden shadow-xl border-[4px] flex items-center justify-center bg-primary/10 text-primary font-black text-4xl uppercase tracking-widest ${creator.isElite ? 'border-zinc-900' : 'border-surface'} transition-all`}>
+                           {creator.image ? (
+                             <img src={creator.image} alt={creator.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                           ) : (
+                             (creator.name || 'U').charAt(0)
+                           )}
                         </div>
                         {creator.isElite && (
                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg border-2 border-surface-container-lowest whitespace-nowrap truncate">
