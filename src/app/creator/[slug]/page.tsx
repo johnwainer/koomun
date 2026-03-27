@@ -63,7 +63,7 @@ export default function CreatorProfilePage() {
             
             {/* Portada Superior del Creador */}
             <div className="w-full h-48 md:h-72 relative bg-surface-container-high border-b border-outline-variant/10">
-               <img src={`https://picsum.photos/1920/400?blur=1`} alt="Banner del Creador" className="w-full h-full object-cover opacity-90" />
+               <img src={creator?.cover_url || `https://picsum.photos/1920/400?blur=1`} alt="Banner del Creador" className="w-full h-full object-cover opacity-90" />
                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
                {isElite && (
                   <div className="absolute top-4 right-4 bg-zinc-900 text-white font-black text-xs uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg border border-surface-container-highest">

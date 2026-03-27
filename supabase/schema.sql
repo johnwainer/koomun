@@ -32,6 +32,7 @@ CREATE TABLE public.profiles (
   full_name TEXT NOT NULL,
   username TEXT UNIQUE NOT NULL,
   avatar_url TEXT,
+  cover_url TEXT,
   bio TEXT,
   role TEXT DEFAULT 'user' CHECK (role IN ('user', 'creator', 'admin', 'super_admin')),
   plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'premium', 'elite')),

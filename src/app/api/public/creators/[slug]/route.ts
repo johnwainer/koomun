@@ -10,7 +10,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     let query = supabaseClient
       .from('profiles')
-      .select('id, full_name, username, plan, role, bio, avatar_url');
+      .select('id, full_name, username, plan, role, bio, avatar_url, cover_url');
 
     if (isUUID) {
        query = query.eq('id', slug);

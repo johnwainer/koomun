@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabaseClient } from "@/lib/supabase";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
@@ -9,7 +11,71 @@ import BottomNavBar from "@/components/BottomNavBar";
 type TabType = "comunidades" | "contenido" | "audiencia" | "finanzas" | "ajustes" | "landing" | "landing_creador" | "eventos";
 
 export default function CreatorStudioPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("landing_creador");
+  
+  const [user, setUser] = useState<any>(null);
+  const [loadingApp, setLoadingApp] = useState(true);
+  const [profileInput, setProfileInput] = useState({ full_name: '', bio: '', avatar_url: '', cover_url: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  useEffect(() => {
+     async function loadAuth() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+           router.push('/login');
+           return;
+        }
+        
+        const { data: profile } = await supabaseClient
+           .from('profiles')
+           .select('*')
+           .eq('id', session.user.id)
+           .single();
+           
+        if (!profile) {
+           router.push('/login');
+           return;
+        }
+        
+        if (!['creator', 'admin', 'super_admin'].includes(profile.role)) {
+           router.push('/dashboard');
+           return;
+        }
+        
+        setUser(profile);
+        setIsElite(profile.plan === 'elite');
+        setProfileInput({ 
+          full_name: profile.full_name || '', 
+          bio: profile.bio || '', 
+          avatar_url: profile.avatar_url || '', 
+          cover_url: profile.cover_url || '' 
+        });
+        setLoadingApp(false);
+     }
+     loadAuth();
+  }, [router]);
+
+  const saveProfileInfo = async () => {
+      setSavingProfile(true);
+      const { error } = await supabaseClient
+        .from('profiles')
+        .update({ 
+           full_name: profileInput.full_name, 
+           bio: profileInput.bio, 
+           avatar_url: profileInput.avatar_url, 
+           cover_url: profileInput.cover_url 
+        })
+        .eq('id', user.id);
+      
+      if (!error) {
+         setUser({ ...user, full_name: profileInput.full_name, bio: profileInput.bio, avatar_url: profileInput.avatar_url, cover_url: profileInput.cover_url });
+         alert("Perfil actualizado correctamente");
+      } else {
+         alert("Error actualizando: " + error.message);
+      }
+      setSavingProfile(false);
+  };
 
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -141,7 +207,10 @@ export default function CreatorStudioPage() {
     
     // Simulate FREE plan limitation blocks
     const hasPDF = contentItems.some(item => item.type === "PDF");
-    if (materialInput.type === "PDF" && hasPDF) return; // Blocked visually, just preventing action
+    if (materialInput.type === "PDF" && hasPDF && !isElite) {
+       setShowUpgradeModal(true);
+       return;
+    }
     if (materialInput.type === "NATIVE") return; // Block native
 
     const newItem = {
@@ -178,6 +247,12 @@ export default function CreatorStudioPage() {
       <SideNavBar />
 
       <main className="lg:ml-64 pt-24 pb-20 px-6 min-h-screen bg-surface">
+        {loadingApp ? (
+          <div className="w-full h-[60vh] flex items-center justify-center">
+            <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
+          </div>
+        ) : (
+        <>
         <div className="w-full max-w-7xl mx-auto flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
           
           <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -565,11 +640,21 @@ export default function CreatorStudioPage() {
                         </h3>
                         <p className="text-sm text-on-surface-variant font-medium mb-6">La imagen principal de fondo que transmite tu vibra.</p>
                         
-                        <div className="w-full h-32 md:h-40 border-2 border-dashed border-outline-variant/50 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 hover:border-primary transition-all cursor-pointer group bg-surface overflow-hidden relative shadow-inner">
-                           <img src={`https://picsum.photos/1920/400?blur=1`} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-30 transition-opacity" />
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                           <span className="material-symbols-outlined text-4xl mb-2 text-white z-10 transition-transform group-hover:-translate-y-2 drop-shadow-md">cloud_upload</span>
-                           <span className="text-sm font-bold z-10 text-white drop-shadow-md px-4 text-center">Reemplazar Portada</span>
+                        <div className="w-full h-32 md:h-40 border-2 border-dashed border-outline-variant/30 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 hover:border-primary transition-all group bg-surface overflow-hidden relative shadow-inner mb-4">
+                           <img src={profileInput.cover_url || `https://picsum.photos/1920/400?blur=1`} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover opacity-80 transition-opacity" />
+                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+                           <span className="material-symbols-outlined text-4xl mb-2 text-white z-10 drop-shadow-md">wallpaper</span>
+                           <span className="text-sm font-bold z-10 text-white drop-shadow-md px-4 text-center">Vista Previa de Portada</span>
+                        </div>
+                        <div>
+                           <label className="block text-xs font-bold text-on-surface mb-2">Enlace de Imagen (URL Portada)</label>
+                           <input 
+                              type="text" 
+                              placeholder="https://..."
+                              value={profileInput.cover_url}
+                              onChange={(e) => setProfileInput({...profileInput, cover_url: e.target.value})}
+                              className="w-full bg-surface-container-high border-2 border-outline-variant/10 focus:border-primary rounded-xl px-4 py-3 text-on-surface font-medium outline-none transition-colors"
+                           />
                         </div>
                      </div>
 
@@ -580,10 +665,30 @@ export default function CreatorStudioPage() {
                         </h3>
                         <div className="flex flex-col gap-5">
                            <div>
+                              <label className="block text-xs font-bold text-on-surface mb-2">Avatar del Creador (URL)</label>
+                              <div className="flex gap-4 items-center mb-4">
+                                 <div className="w-16 h-16 rounded-full border-2 border-outline-variant/20 flex items-center justify-center bg-surface overflow-hidden shrink-0">
+                                    {profileInput.avatar_url ? (
+                                       <img src={profileInput.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                       <span className="text-xl font-bold uppercase">{profileInput.full_name?.charAt(0) || "U"}</span>
+                                    )}
+                                 </div>
+                                 <input 
+                                    type="text" 
+                                    placeholder="https://..."
+                                    value={profileInput.avatar_url}
+                                    onChange={(e) => setProfileInput({...profileInput, avatar_url: e.target.value})}
+                                    className="w-full bg-surface-container-high border-2 border-outline-variant/10 focus:border-primary rounded-xl px-4 py-3 text-on-surface font-medium outline-none transition-colors"
+                                 />
+                              </div>
+                           </div>
+                           <div>
                               <label className="block text-xs font-bold text-on-surface mb-2">Nombre de Creador</label>
                               <input 
                                  type="text" 
-                                 defaultValue="Tu Nombre"
+                                 value={profileInput.full_name}
+                                 onChange={(e) => setProfileInput({...profileInput, full_name: e.target.value})}
                                  className="w-full bg-surface-container-high border-2 border-outline-variant/10 focus:border-primary rounded-xl px-4 py-3 text-on-surface font-medium outline-none transition-colors"
                               />
                            </div>
@@ -591,10 +696,18 @@ export default function CreatorStudioPage() {
                               <label className="block text-xs font-bold text-on-surface mb-2">Biografía / Pitch de Venta Automático</label>
                               <textarea 
                                  rows={3}
-                                 defaultValue="Ayudando a miles a escalar operaciones digitales..."
+                                 value={profileInput.bio}
+                                 onChange={(e) => setProfileInput({...profileInput, bio: e.target.value})}
                                  className="w-full bg-surface-container-high border-2 border-outline-variant/10 focus:border-primary rounded-xl px-4 py-3 text-on-surface font-medium outline-none transition-colors resize-none"
                               ></textarea>
                            </div>
+                           <button 
+                             onClick={saveProfileInfo} 
+                             disabled={savingProfile} 
+                             className="w-full py-3 bg-primary text-white text-sm font-extrabold rounded-xl hover:bg-primary-container active:scale-95 transition-all shadow-sm flex justify-center items-center h-12"
+                           >
+                             {savingProfile ? <span className="material-symbols-outlined animate-spin">refresh</span> : "Guardar Información"}
+                           </button>
                         </div>
                      </div>
                   </div>
@@ -984,9 +1097,15 @@ export default function CreatorStudioPage() {
                     <p className="text-on-surface-variant text-sm">Crea eventos físicos o virtuales (Zoom/Meet) para tu comunidad o perfil de creador.</p>
                   </div>
                   <button 
-                    onClick={() => setIsEventModalOpen(true)} 
+                    onClick={() => {
+                        if (!isElite) {
+                            setShowUpgradeModal(true);
+                        } else {
+                            setIsEventModalOpen(true);
+                        }
+                    }} 
                     className="bg-amber-500 hover:bg-amber-400 text-amber-950 px-6 py-2.5 rounded-full font-black text-sm shadow-md shadow-amber-500/20 flex items-center gap-2 transition-transform hover:scale-105"
-                    title="Esta función será exclusiva de Elite, pero puedes probarla ahora."
+                    title="Esta función es exclusiva para Creadores Elite."
                   >
                      <span className="material-symbols-outlined text-[16px]">lock</span>
                      Crear Evento (Elite)
@@ -1489,8 +1608,10 @@ export default function CreatorStudioPage() {
                 </div>
              </div>
           )}
-       </main>
-       <BottomNavBar />
+        </>
+        )}
+      </main>
+      <BottomNavBar />
     </>
   );
 }
