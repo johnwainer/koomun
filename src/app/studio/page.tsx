@@ -1581,7 +1581,7 @@ export default function CreatorStudioPage() {
                        <div>
                           <label className="block text-xs font-bold text-on-surface mb-1">Nivel de Acceso</label>
                           <div className="flex gap-2 p-1 bg-surface-container-highest rounded-xl">
-                             {["Muestra Gratis", "Incluido", "Pago Especial"].map(level => (
+                             {["Muestra Gratis", "Premium", "Pago Especial"].map(level => (
                                 <button 
                                   key={level}
                                   onClick={() => setMaterialInput({...materialInput, access: level})}
