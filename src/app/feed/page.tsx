@@ -18,13 +18,16 @@ type Post = {
   comments: number;
 };
 
+import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import CommunitySwitcher, { MyCommunity } from "@/components/CommunitySwitcher";
-import { useRouter } from "next/navigation";
 import AccessMessage from "@/components/AccessMessage";
 import { supabaseClient } from "@/lib/supabase";
 
-export default function DashboardPage() {
+function FeedPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetCommunityId = searchParams.get("c");
   const [activeCommunity, setActiveCommunity] = useState<MyCommunity | null>(null);
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [posts, setPosts] = useState<any[]>([]);
@@ -165,12 +168,12 @@ export default function DashboardPage() {
       <TopNavBar />
       <SideNavBar />
       
-      <main className="lg:ml-64 pt-16 pb-20 bg-surface min-h-screen">
+      <main className="lg:ml-64 pt-16 px-0 sm:px-4 lg:px-8 pb-20 min-h-screen bg-surface flex flex-col relative">
         
         {/* Nav de Mis Comunidades */}
         <CommunitySwitcher 
            maxWidth="max-w-7xl" 
-           activeId={activeCommunity?.id} 
+           activeId={targetCommunityId || undefined} 
            onChange={(c) => setActiveCommunity(c)} 
            onLoad={(_, s) => setAccessState(s)} 
         />
@@ -445,5 +448,13 @@ export default function DashboardPage() {
 
       <BottomNavBar />
     </>
+  );
+}
+
+export default function FeedPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface flex items-center justify-center border-t border-outline-variant/10"><span className="material-symbols-outlined animate-spin text-4xl text-primary">autorenew</span></div>}>
+      <FeedPageContent />
+    </Suspense>
   );
 }

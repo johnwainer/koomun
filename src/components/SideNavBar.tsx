@@ -1,12 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabaseClient } from "@/lib/supabase";
 
-export default function SideNavBar() {
+import { Suspense } from "react";
+
+function SideNavBarContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const cParam = searchParams.get('c');
+  const communityQuery = cParam ? `?c=${cParam}` : '';
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -40,15 +45,15 @@ export default function SideNavBar() {
           <span className="material-symbols-outlined">apps</span>
           <span>Comunidades</span>
         </Link>
-        <Link href="/feed" className={getLinkClass("/feed")}>
+        <Link href={`/feed${communityQuery}`} className={getLinkClass("/feed")}>
           <span className="material-symbols-outlined">forum</span>
           <span>Feed</span>
         </Link>
-        <Link href="/classroom" className={getLinkClass("/classroom")}>
+        <Link href={`/classroom${communityQuery}`} className={getLinkClass("/classroom")}>
           <span className="material-symbols-outlined">local_library</span>
           <span>Librería</span>
         </Link>
-        <Link href="/calendar" className={getLinkClass("/calendar")}>
+        <Link href={`/calendar${communityQuery}`} className={getLinkClass("/calendar")}>
           <span className="material-symbols-outlined">calendar_today</span>
           <span>Calendario</span>
         </Link>
@@ -85,5 +90,13 @@ export default function SideNavBar() {
         </Link>
       </div>
     </aside>
+  );
+}
+
+export default function SideNavBar() {
+  return (
+    <Suspense fallback={<aside className="hidden lg:flex flex-col gap-2 p-4 h-screen w-64 fixed left-0 top-0 pt-20 border-r border-[#c3c6d7]/15 bg-[#faf9f7] text-sm font-medium tracking-wide z-40"></aside>}>
+      <SideNavBarContent />
+    </Suspense>
   );
 }

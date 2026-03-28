@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function BottomNavBar() {
+function BottomNavBarContent() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const cParam = searchParams.get('c');
+  const communityQuery = cParam ? `?c=${cParam}` : '';
 
   const getLinkClass = (href: string) => {
     return pathname === href
@@ -17,15 +21,23 @@ export default function BottomNavBar() {
       <Link href="/dashboard" className={getLinkClass("/dashboard")}>
         <span className="material-symbols-outlined text-[28px]">apps</span>
       </Link>
-      <Link href="/feed" className={getLinkClass("/feed")}>
+      <Link href={`/feed${communityQuery}`} className={getLinkClass("/feed")}>
         <span className="material-symbols-outlined text-[28px]">forum</span>
       </Link>
-      <Link href="/classroom" className={getLinkClass("/classroom")}>
+      <Link href={`/classroom${communityQuery}`} className={getLinkClass("/classroom")}>
         <span className="material-symbols-outlined text-[28px]">local_library</span>
       </Link>
       <Link href="/studio" className={getLinkClass("/studio")}>
         <span className="material-symbols-outlined text-[28px]">team_dashboard</span>
       </Link>
     </div>
+  );
+}
+
+export default function BottomNavBar() {
+  return (
+    <Suspense fallback={<div className="md:hidden fixed bottom-0 left-0 w-full bg-[#faf9f7] backdrop-blur-xl bg-opacity-95 z-50 flex items-center justify-evenly h-[72px] px-2 border-t border-outline-variant/10 shadow-[0_-4px_24px_rgba(0,0,0,0.02)]"></div>}>
+      <BottomNavBarContent />
+    </Suspense>
   );
 }
