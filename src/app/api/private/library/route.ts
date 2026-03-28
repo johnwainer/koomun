@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     if (moduleIds.length > 0) {
         const { data: items } = await supabaseClient
           .from('content_items')
-          .select('id, module_id, type, title')
+          .select('id, module_id, type, title, platform, media_url, duration_string, is_secure, access_level')
           .in('module_id', moduleIds);
           
         if (items) {

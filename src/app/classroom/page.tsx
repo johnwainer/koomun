@@ -25,17 +25,19 @@ type Course = {
 type Lesson = {
   id: string;
   title: string;
-  duration: string;
-  completed: boolean;
-  videoUrl?: string; // YouTube ID o Vimeo ID si es video
-  description: string;
-  type: "youtube" | "vimeo" | "pdf";
+  duration_string?: string;
+  completed?: boolean;
+  media_url?: string;
+  platform?: string;
+  type?: string;
+  description?: string;
+  is_secure?: boolean;
 };
 
 type Module = {
   id: string;
   title: string;
-  lessons: Lesson[];
+  items: Lesson[];
 };
 
 export default function ClassroomPage() {
@@ -54,6 +56,27 @@ export default function ClassroomPage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [newCardInput, setNewCardInput] = useState("");
   const [showAddCard, setShowAddCard] = useState(savedCards.length === 0);
+
+  // States funcionales para UI local temporal (en un futuro deben persistirse vía supabase)
+  const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
+  const [savedItems, setSavedItems] = useState<Record<string, boolean>>({});
+  const [commentsList, setCommentsList] = useState<any[]>([]);
+  const [commentInput, setCommentInput] = useState("");
+
+  const toggleComplete = (id: string) => {
+     setCompletedItems(prev => ({...prev, [id]: !prev[id]}));
+  };
+  
+  const toggleBookmark = (id: string) => {
+     setSavedItems(prev => ({...prev, [id]: !prev[id]}));
+  };
+
+  const handlePostComment = () => {
+     if(commentInput.trim().length > 0) {
+        setCommentsList(prev => [...prev, { text: commentInput, user: 'Usuario Nuevo', date: new Date().toISOString() }]);
+        setCommentInput("");
+     }
+  };
 
   useEffect(() => {
     async function loadLibrary() {
@@ -285,7 +308,7 @@ export default function ClassroomPage() {
                                   <span className="text-sm truncate">{lesson.title}</span>
                                   <span className={`text-[10px] uppercase tracking-widest ${
                                     activeLesson?.id === lesson.id ? "text-primary/70" : "text-on-surface-variant/70"
-                                  }`}>{lesson.type || "Elemento"}</span>
+                                  }`}>{lesson.platform || lesson.type || "Elemento"}</span>
                                 </div>
                               </button>
                             ))}
@@ -304,21 +327,21 @@ export default function ClassroomPage() {
                   ) : (
                   <>
                   {/* Visor Dinámico: YouTube, Vimeo o PDF Bloqueado */}
-                  {activeLesson.type === "youtube" ? (
+                  {activeLesson.platform === "youtube" ? (
                     <div className="w-full aspect-video bg-black rounded-xl lg:rounded-2xl overflow-hidden shadow-lg">
                       <iframe 
                         className="w-full h-full border-none" 
-                        src={`https://www.youtube.com/embed/${activeLesson.videoUrl}?rel=0&modestbranding=1`}
+                        src={`https://www.youtube.com/embed/${activeLesson.media_url ? activeLesson.media_url.replace('https://youtube.com/watch?v=', '').replace('https://youtu.be/', '') : ''}?rel=0&modestbranding=1`}
                         title="YouTube video player" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                         allowFullScreen
                       ></iframe>
                     </div>
-                  ) : activeLesson.type === "vimeo" ? (
+                  ) : activeLesson.platform === "vimeo" ? (
                     <div className="w-full aspect-video bg-black rounded-xl lg:rounded-2xl overflow-hidden shadow-lg">
                       <iframe 
                         className="w-full h-full border-none" 
-                        src={`https://player.vimeo.com/video/${activeLesson.videoUrl}?title=0&byline=0&portrait=0`}
+                        src={`https://player.vimeo.com/video/${activeLesson.media_url}?title=0&byline=0&portrait=0`}
                         title="Vimeo video player" 
                         allow="autoplay; fullscreen; picture-in-picture" 
                         allowFullScreen
@@ -329,14 +352,16 @@ export default function ClassroomPage() {
                         <div className="w-full h-full relative">
                            {/* Renderizamos el PDF directamente en iframe desactivando barra de herramientas de navegador */}
                            <iframe 
-                             src="/sample.pdf#toolbar=0&navpanes=0&scrollbar=0" 
+                             src={`${activeLesson.media_url || '/sample.pdf'}#toolbar=0&navpanes=0&scrollbar=0`}
                              className="w-full h-full border-none pointer-events-none sm:pointer-events-auto"
                              onContextMenu={(e) => e.preventDefault()}
                              title="Visor PDF Protegido"
                            ></iframe>
-                           <div className="absolute top-0 right-0 p-4 z-10 pointer-events-none">
-                              <span className="bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">security</span> Protegido</span>
-                           </div>
+                           {activeLesson.is_secure && (
+                              <div className="absolute top-0 right-0 p-4 z-10 pointer-events-none">
+                                 <span className="bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">security</span> Protegido</span>
+                              </div>
+                           )}
                         </div>
                         
                         <div className="absolute bottom-0 w-full bg-surface-container-low/95 backdrop-blur border-t border-outline-variant/20 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -345,7 +370,10 @@ export default function ClassroomPage() {
                              <span className="text-xs text-on-surface-variant">Este documento es lectura de sitio. Desbloquealo para descargarlo.</span>
                            </div>
                            <button 
-                              onClick={() => setShowPaywallModal(true)}
+                              onClick={() => {
+                                 if (activeLesson.is_secure) setShowPaywallModal(true);
+                                 else window.open(activeLesson.media_url || '/sample.pdf', '_blank');
+                              }}
                               className="px-6 py-2 bg-gradient-to-r from-primary-container to-primary text-white font-bold rounded-full uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center shrink-0 gap-2 outline-none"
                            >
                               <span className="material-symbols-outlined text-sm">lock_open</span>
@@ -362,13 +390,19 @@ export default function ClassroomPage() {
                         {activeLesson.description}
                       </p>
                       <div className="mt-8 flex items-center gap-4">
-                        <button className="px-6 py-3 bg-primary text-white font-bold text-sm uppercase tracking-widest rounded-full hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all flex items-center gap-2 outline-none">
-                          <span className="material-symbols-outlined text-lg">check_circle</span>
-                          Marcar Completado
-                        </button>
-                        <button className="w-12 h-12 flex items-center justify-center border border-outline-variant/30 rounded-full hover:bg-surface-container-low text-on-surface-variant transition-colors outline-none">
-                          <span className="material-symbols-outlined">bookmark_border</span>
-                        </button>
+                         <button 
+                            onClick={() => toggleComplete(activeLesson.id)}
+                            className={`px-6 py-3 font-bold text-sm uppercase tracking-widest rounded-full hover:shadow-lg active:scale-95 transition-all flex items-center gap-2 outline-none ${completedItems[activeLesson.id] ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-primary text-white shadow-primary/30'}`}
+                         >
+                           <span className="material-symbols-outlined text-lg">check_circle</span>
+                           {completedItems[activeLesson.id] ? 'Completado' : 'Marcar Completado'}
+                         </button>
+                         <button 
+                            onClick={() => toggleBookmark(activeLesson.id)}
+                            className={`w-12 h-12 flex items-center justify-center border rounded-full transition-colors outline-none ${savedItems[activeLesson.id] ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant/30 hover:bg-surface-container-low text-on-surface-variant'}`}
+                         >
+                           <span className={savedItems[activeLesson.id] ? "material-symbols-outlined filled" : "material-symbols-outlined"}>bookmark</span>
+                         </button>
                       </div>
                     </div>
                   </div>
@@ -376,19 +410,34 @@ export default function ClassroomPage() {
                   <div className="mt-12 pt-8 border-t border-outline-variant/10">
                      <h4 className="text-lg font-bold mb-6 flex items-center gap-2 text-on-surface">
                        <span className="material-symbols-outlined text-primary">forum</span>
-                       Comentarios (12)
+                       Comentarios ({commentsList.length})
                      </h4>
+                     <div className="flex flex-col gap-6 mb-8">
+                        {commentsList.map((c, i) => (
+                           <div key={i} className="flex gap-4">
+                              <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
+                                <img src="https://i.pravatar.cc/150?u=any" alt="Avatar" />
+                              </div>
+                              <div className="flex-1">
+                                <span className="text-xs font-bold text-on-surface-variant mb-1 block">{c.user}</span>
+                                <p className="text-sm text-on-surface p-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl rounded-tl-none">{c.text}</p>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
                      <div className="flex gap-4">
                         <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
                           <img src="https://i.pravatar.cc/150?u=current_user" alt="Me" />
                         </div>
                         <div className="flex-1 flex flex-col gap-3">
                           <textarea 
+                            value={commentInput}
+                            onChange={(e) => setCommentInput(e.target.value)}
                             placeholder="Deja una pregunta o comentario..."
                             className="w-full bg-surface-container-low border border-transparent focus:border-primary/30 p-4 rounded-xl outline-none resize-none h-24 text-sm text-on-surface"
                           ></textarea>
                           <div className="flex justify-end">
-                            <button className="px-6 py-2 bg-primary/10 text-primary font-bold text-xs uppercase tracking-widest rounded-full hover:bg-primary/20 transition-colors outline-none">
+                            <button onClick={handlePostComment} className="px-6 py-2 bg-primary/10 text-primary font-bold text-xs uppercase tracking-widest rounded-full hover:bg-primary/20 transition-colors outline-none cursor-pointer">
                               Comentar
                             </button>
                           </div>

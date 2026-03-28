@@ -5,69 +5,47 @@ import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function TrendingPage() {
   const router = useRouter();
-  const trendingCommunities = [
-    {
-       rank: 1,
-       name: "SaaS Builders Elite",
-       desc: "De 0 a $10k MRR construyendo software real de forma transparente.",
-       growth: "+540%",
-       members: "12.4k",
-       trendColor: "text-amber-500",
-       bgTrend: "bg-amber-500/10",
-       icon: "rocket_launch",
-       image: "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-       creator: "https://i.pravatar.cc/150?u=creator1"
-    },
-    {
-       rank: 2,
-       name: "UI Design Hackers",
-       desc: "Masterclass perpetuo sobre Figma, variables y sistemas de diseño.",
-       growth: "+310%",
-       members: "8.1k",
-       trendColor: "text-green-500",
-       bgTrend: "bg-green-500/10",
-       icon: "palette",
-       image: "https://media.giphy.com/media/LmNwrBhejkK9EFP504/giphy.gif",
-       creator: "https://i.pravatar.cc/150?u=creator2"
-    },
-    {
-       rank: 3,
-       name: "Startups Latam Ai",
-       desc: "Fundadores escalando sus agencias con inteligencia artificial pura.",
-       growth: "+280%",
-       members: "14k",
-       trendColor: "text-green-500",
-       bgTrend: "bg-green-500/10",
-       icon: "smart_toy",
-       image: "https://media.giphy.com/media/xUPJPl5gXPo8CtyqQ/giphy.gif",
-       creator: "https://i.pravatar.cc/150?u=creator3"
-    },
-    {
-       rank: 4,
-       name: "Freelancers Hispanos",
-       desc: "Consigue contratos internacionales sin saber inglés nativo.",
-       growth: "+190%",
-       members: "5.5k",
-       trendColor: "text-green-500",
-       bgTrend: "bg-green-500/10",
-       icon: "public",
-       creator: "https://i.pravatar.cc/150?u=creator4"
-    },
-    {
-       rank: 5,
-       name: "Agencias Digitales 360",
-       desc: "Sistemas de prospección B2B automatizados para ventas high-ticket.",
-       growth: "+150%",
-       members: "2.8k",
-       trendColor: "text-green-500",
-       bgTrend: "bg-green-500/10",
-       icon: "storefront",
-       creator: "https://i.pravatar.cc/150?u=creator5"
+  const [trendingCommunities, setTrendingCommunities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTrending() {
+      // Fetch published communities ordered by creation or random for now
+      // In a real app we would order by members count or growth metric
+      const { data, error } = await supabaseClient
+         .from('communities')
+         .select('id, title, description, cover_image_url, created_at, creator:profiles(full_name, avatar_url, plan), members(count)')
+         .eq('is_published', true)
+         .order('created_at', { ascending: false })
+         .limit(15);
+         
+      if (data) {
+         const mapped = data.map((c: any, index: number) => ({
+             rank: index + 1,
+             name: c.title,
+             id: c.id,
+             desc: c.description || 'Sin descripción',
+             growth: "+0%", // proxy
+             members: c.members[0]?.count || "0",
+             trendColor: index < 2 ? "text-amber-500" : "text-green-500",
+             bgTrend: index < 2 ? "bg-amber-500/10" : "bg-green-500/10",
+             icon: "rocket_launch",
+             image: c.cover_image_url || "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
+             creator: c.creator?.avatar_url || "https://i.pravatar.cc/150",
+             is_elite: c.creator?.plan === 'elite'
+         }));
+         setTrendingCommunities(mapped);
+      }
+      setLoading(false);
     }
-  ];
+    loadTrending();
+  }, []);
+// Static data removed
 
   const top3 = trendingCommunities.slice(0, 3);
   const rest = trendingCommunities.slice(3);
@@ -100,7 +78,7 @@ export default function TrendingPage() {
              {top3.map((community, i) => (
                 <div 
                   key={community.rank} 
-                  onClick={() => router.push(`/c/${community.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
+                  onClick={() => router.push(`/c/${community.id}`)}
                   className={`bg-surface-container-lowest rounded-[2rem] overflow-hidden shadow-2xl relative group cursor-pointer border hover:-translate-y-2 transition-transform duration-300 ${i === 0 ? 'border-amber-500/30 md:scale-105 z-10' : 'border-outline-variant/20'}`}
                 >
                    {/* Rank Badge */}
@@ -124,11 +102,11 @@ export default function TrendingPage() {
                           >
                              <img src={community.creator} alt="Creator" className="w-full h-full object-cover" />
                           </div>
-                          {community.rank % 2 === 0 && (
+                           {community.is_elite && (
                              <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[6px] md:text-[7px] font-black uppercase tracking-widest px-1.5 py-[1px] rounded-full shadow border-2 border-surface-container-lowest whitespace-nowrap z-20">
                                 Elite
                              </div>
-                          )}
+                           )}
                        </div>
                    </div>
 
@@ -178,11 +156,11 @@ export default function TrendingPage() {
                       <div className={`w-14 h-14 rounded-full overflow-hidden bg-surface-container border shadow-sm ${community.rank % 2 === 0 ? 'border-[3px] border-zinc-900' : 'border border-outline-variant/20'}`}>
                          <img src={community.creator} alt="Creator" className="w-full h-full object-cover" />
                       </div>
-                      {community.rank % 2 === 0 && (
+                       {community.is_elite && (
                          <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[6px] font-black uppercase tracking-widest px-1.5 py-[1px] rounded-full shadow border-2 border-surface-container-lowest whitespace-nowrap z-20 md:text-[7px] md:px-2 md:py-[1px]">
                             Elite
                          </div>
-                      )}
+                       )}
                    </div>
                    <div>
                       <h3 className="font-extrabold text-lg text-on-surface group-hover:text-primary transition-colors leading-tight mb-1">
