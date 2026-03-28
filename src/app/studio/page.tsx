@@ -1163,11 +1163,13 @@ export default function CreatorStudioPage() {
    }`}
 >
   <div className="flex-1 truncate pr-2">{mod.name}</div>
-  <div className="flex items-center gap-2">
-      <span className={`text-xs px-2 py-0.5 rounded-full ${activeModuleId === mod.id ? 'bg-surface text-on-surface-variant' : 'bg-surface-container'}`}>
+  <div className="flex items-center gap-1 sm:gap-2">
+      <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full ${activeModuleId === mod.id ? 'bg-surface text-on-surface-variant' : 'bg-surface-container'}`}>
          {mod.count} ítems
       </span>
-      <span onClick={(e) => { e.stopPropagation(); deleteModule(mod.id); }} className="material-symbols-outlined text-[16px] text-outline-variant hover:text-red-500 hover:bg-red-500/10 rounded p-1 transition-colors z-10 relative">delete</span>
+      <span onClick={(e) => { e.stopPropagation(); setEditModuleId(mod.id); setModuleInputName(mod.name); setModuleInputDesc(mod.description || ''); setModuleImageUrl(mod.cover_image_url || ''); setIsModuleModalOpen(true); }} className="material-symbols-outlined text-[16px] sm:text-[18px] text-outline-variant hover:text-blue-500 hover:bg-blue-500/10 rounded p-1 transition-colors z-10 relative">edit</span>
+      <span onClick={(e) => { e.stopPropagation(); toggleModuleActive(mod.id, mod.is_active); }} className={`material-symbols-outlined text-[16px] sm:text-[18px] rounded p-1 transition-colors z-10 relative cursor-pointer ${mod.is_active ? 'text-green-500 hover:bg-green-500/10' : 'text-outline-variant hover:text-green-500 hover:bg-green-500/10'}`}>{mod.is_active ? 'visibility' : 'visibility_off'}</span>
+      <span onClick={(e) => { e.stopPropagation(); deleteModule(mod.id); }} className="material-symbols-outlined text-[16px] sm:text-[18px] text-outline-variant hover:text-red-500 hover:bg-red-500/10 rounded p-1 transition-colors z-10 relative cursor-pointer">delete</span>
   </div>
 </li>
                         ))}
@@ -1238,12 +1240,15 @@ export default function CreatorStudioPage() {
                                     </span>
                                  </button>
                                  <div className="flex items-center gap-1">
-                                    {/* Botón Visibilidad/Ojo (Visual toggles based on status) */}
-                                    <div className="text-outline-variant p-2 pointer-events-none">
-                                       <span className="material-symbols-outlined text-[16px] sm:text-[18px]">
-                                          {item.access === "Muestra Gratis" ? 'visibility' : item.access === "Premium" ? 'visibility_off' : 'verified_user'}
+                                    <button onClick={() => { setEditMaterialId(item.id); setMaterialInput({title: item.title, type: item.type, platform: item.platform || 'youtube', access: item.access, description: "", price: "", video_url: item.url, media_url: item.url}); setIsMaterialModalOpen(true); }} className="text-outline-variant hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-surface-container" title="Editar">
+                                       <span className="material-symbols-outlined text-[16px] sm:text-[18px]">edit</span>
+                                    </button>
+
+                                    <button onClick={() => toggleItemActive(item.id, item.is_active)} className="text-outline-variant hover:text-green-500 transition-colors p-2 rounded-full hover:bg-surface-container" title={item.is_active ? "Ocultar" : "Mostrar"}>
+                                       <span className={`material-symbols-outlined text-[16px] sm:text-[18px] ${item.is_active ? 'text-green-500' : ''}`}>
+                                          {item.is_active ? 'visibility' : 'visibility_off'}
                                        </span>
-                                    </div>
+                                    </button>
                                     
                                     <button onClick={() => deleteItem(item.id)} className="text-outline-variant hover:text-red-500 transition-colors p-2 rounded-full hover:bg-surface-container" title="Eliminar">
                                        <span className="material-symbols-outlined text-[16px] sm:text-[18px]">delete</span>
