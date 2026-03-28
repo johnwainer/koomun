@@ -48,7 +48,8 @@ export default function MyCommunitiesPage() {
                           members: c.members?.[0]?.count ? c.members[0].count.toString() : "0", 
                           price: c.price_tier,
                           image: c.cover_image_url || `https://picsum.photos/seed/${c.id}/400/250`,
-                          creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
+                          creatorAvatar: c.creator?.avatar_url,
+                          creatorFullName: c.creator?.full_name,
                           creatorUsername: c.creator?.username || `Creador-${c.id}`,
                           isElite: c.creator?.plan === 'elite'
                        }));
@@ -128,8 +129,12 @@ export default function MyCommunitiesPage() {
                                            router.push(`/creator/${community.creatorUsername}`);
                                         }}
                                     >
-                                       <div className={`w-12 h-12 rounded-full border-[3px] bg-surface-container-high overflow-hidden shadow-sm ${community.isElite ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
-                                         <img src={community.creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
+                                       <div className={`w-12 h-12 flex items-center justify-center font-black text-xl text-white rounded-full border-[3px] bg-primary overflow-hidden shadow-sm ${community.isElite ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
+                                         {community.creatorAvatar ? (
+                                             <img src={community.creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
+                                         ) : (
+                                             (community.creatorFullName?.charAt(0) || community.creatorUsername?.charAt(0) || "C").toUpperCase()
+                                         )}
                                        </div>
                                        {community.isElite && (
                                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[6px] font-black uppercase tracking-widest px-1.5 py-[1px] rounded-full shadow border-2 border-surface-container-lowest whitespace-nowrap z-20 md:text-[7px] md:px-2 md:py-0.5">
@@ -218,8 +223,12 @@ export default function MyCommunitiesPage() {
                        }}
                        className="relative cursor-pointer hover:scale-105 transition-transform"
                     >
-                       <div className={`w-16 h-16 rounded-full border-[4px] bg-surface-container overflow-hidden shadow-md ${community.isElite ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
-                         <img src={community.creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
+                       <div className={`w-16 h-16 flex items-center justify-center font-black text-2xl text-white rounded-full border-[4px] bg-primary overflow-hidden shadow-md ${community.isElite ? 'border-zinc-900' : 'border-surface-container-lowest'}`}>
+                         {community.creatorAvatar ? (
+                             <img src={community.creatorAvatar} alt="Creator" className="w-full h-full object-cover" />
+                         ) : (
+                             (community.creatorFullName?.charAt(0) || community.creatorUsername?.charAt(0) || "C").toUpperCase()
+                         )}
                        </div>
                        {community.isElite && (
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[7px] font-black uppercase tracking-widest px-2 py-[1px] rounded-full shadow border-2 border-surface-container-lowest whitespace-nowrap z-20">
