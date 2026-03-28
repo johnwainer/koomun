@@ -284,7 +284,8 @@ export default function CreatorStudioPage() {
       "Eliminar Lección",
       "¿Seguro que deseas eliminar este contenido? Esta acción no se puede deshacer.",
       async () => {
-        await supabaseClient.from('content_items').delete().eq('id', id);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        await fetch(`/api/private/studio/items?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${session?.access_token}` } });
         setContentItems(items => items.filter(item => item.id !== id));
         setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count - 1 } : m));
       }
@@ -292,7 +293,8 @@ export default function CreatorStudioPage() {
   };
 
   const toggleItemActive = async (id: string, current: boolean) => {
-    await supabaseClient.from('content_items').update({ is_active: !current }).eq('id', id);
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    await fetch(`/api/private/studio/items`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ id, is_active: !current }) });
     setContentItems(contentItems.map(item => item.id === id ? { ...item, is_active: !current } : item));
   };
   
@@ -301,7 +303,8 @@ export default function CreatorStudioPage() {
       "Eliminar Módulo",
       "¿Seguro que quieres eliminar este módulo y todo su contenido? Esta acción no se puede deshacer.",
       async () => {
-        await supabaseClient.from('content_modules').delete().eq('id', id);
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        await fetch(`/api/private/studio/modules?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${session?.access_token}` } });
         setModuleNames(moduleNames.filter(m => m.id !== id));
         if (activeModuleId === id) setActiveModuleId(moduleNames[0]?.id || null);
       }
@@ -309,7 +312,8 @@ export default function CreatorStudioPage() {
   };
   
   const toggleModuleActive = async (id: string, current: boolean) => {
-    await supabaseClient.from('content_modules').update({ is_active: !current }).eq('id', id);
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    await fetch(`/api/private/studio/modules`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ id, is_active: !current }) });
     setModuleNames(moduleNames.map(m => m.id === id ? { ...m, is_active: !current } : m));
   };
 
@@ -334,11 +338,13 @@ export default function CreatorStudioPage() {
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedIdx !== null) {
-       // Save new order to DB
        const updates = contentItems.map((it, i) => ({ id: it.id, order_index: i }));
-       // Unfortunately we have to update them one by one or via rpc. Let's do parallel updates contextually.
-       const promises = updates.map(up => supabaseClient.from('content_items').update({ order_index: up.order_index }).eq('id', up.id));
-       await Promise.all(promises);
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       await fetch('/api/private/studio/items/reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ updates })
+       });
     }
     setDraggedIdx(null);
   };
@@ -477,25 +483,18 @@ export default function CreatorStudioPage() {
     }
     
     if (editModuleId) {
-       const { error } = await supabaseClient.from('content_modules').update({
-          title: moduleInputName,
-          description: moduleInputDesc,
-          cover_image_url: moduleImageUrl
-       }).eq('id', editModuleId);
-       if (!error) {
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       const res = await fetch(`/api/private/studio/modules`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ id: editModuleId, name: moduleInputName, description: moduleInputDesc, cover_image_url: moduleImageUrl }) });
+       if (res.ok) {
           setModuleNames(moduleNames.map(m => m.id === editModuleId ? { ...m, name: moduleInputName, description: moduleInputDesc, cover_image_url: moduleImageUrl } : m));
        } else showAlert("Error", "Error al editar módulo");
     } else {
-       const { data, error } = await supabaseClient.from('content_modules').insert({
-          community_id: selectedCommunityId,
-          title: moduleInputName,
-          description: moduleInputDesc,
-          cover_image_url: moduleImageUrl,
-          order_index: moduleNames.length
-       }).select().single();
-       if (data && !error) {
-          setModuleNames([{ id: data.id, name: data.title, count: 0, is_active: data.is_active, description: data.description, cover_image_url: data.cover_image_url }, ...moduleNames]);
-          setActiveModuleId(data.id);
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       const res = await fetch('/api/private/studio/modules', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ community_id: selectedCommunityId, name: moduleInputName, description: moduleInputDesc, cover_image_url: moduleImageUrl }) });
+       if (res.ok) {
+          const { module } = await res.json();
+          setModuleNames([{ id: module.id, name: module.title, count: 0, is_active: module.is_active, description: module.description, cover_image_url: module.cover_image_url }, ...moduleNames]);
+          setActiveModuleId(module.id);
        } else showAlert("Error", "Error creating module");
     }
     
@@ -516,14 +515,9 @@ export default function CreatorStudioPage() {
     }
     
     if (editMaterialId) {
-       const { error } = await supabaseClient.from('content_items').update({
-          title: materialInput.title,
-          type: materialInput.type,
-          platform: materialInput.type === "PDF" ? null : materialInput.platform,
-          media_url: materialInput.type === "NATIVE" ? materialInput.media_url : materialInput.video_url,
-          access_level: materialInput.access
-       }).eq('id', editMaterialId);
-       if (!error) {
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       const res = await fetch(`/api/private/studio/items`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ id: editMaterialId, title: materialInput.title, type: materialInput.type, platform: materialInput.type === "PDF" ? null : materialInput.platform, media_url: materialInput.type === "NATIVE" ? materialInput.media_url : materialInput.video_url, access_level: materialInput.access }) });
+       if (res.ok) {
           setContentItems(contentItems.map(item => item.id === editMaterialId ? {
               ...item,
               title: materialInput.title,
@@ -534,16 +528,10 @@ export default function CreatorStudioPage() {
           } : item));
        } else showAlert("Error", "Error al editar lección");
     } else {
-       const { data: insertedItem, error } = await supabaseClient.from('content_items').insert({
-          module_id: activeModuleId,
-          title: materialInput.title,
-          type: materialInput.type,
-          platform: materialInput.type === "PDF" ? null : materialInput.platform,
-          media_url: materialInput.type === "NATIVE" ? materialInput.media_url : materialInput.video_url,
-          access_level: materialInput.access,
-          order_index: contentItems.length
-       }).select().single();
-       if (insertedItem && !error) {
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       const res = await fetch(`/api/private/studio/items`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ module_id: activeModuleId, title: materialInput.title, type: materialInput.type, platform: materialInput.type === "PDF" ? null : materialInput.platform, media_url: materialInput.type === "NATIVE" ? materialInput.media_url : materialInput.video_url, access_level: materialInput.access }) });
+       if (res.ok) {
+          const { item: insertedItem } = await res.json();
           setContentItems([...contentItems, {
              id: insertedItem.id,
              title: insertedItem.title,
@@ -1201,6 +1189,7 @@ export default function CreatorStudioPage() {
                               onDragStart={(e) => onDragStart(e, index)}
                               onDragEnter={(e) => onDragEnter(e, index)}
                               onDragOver={(e) => e.preventDefault()}
+                              onDragEnd={onDrop}
                               className={`group bg-surface border border-outline-variant/20 hover:border-primary/50 relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 rounded-2xl shadow-sm transition-all cursor-move ${draggedIdx === index ? 'opacity-50' : 'opacity-100'}`}
                            >
                               <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto min-w-0 flex-1">

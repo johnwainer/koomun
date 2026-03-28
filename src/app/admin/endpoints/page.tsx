@@ -122,6 +122,60 @@ export default function AdminEndpointsPage() {
       path: "/api/private/library",
       description: "Obtiene los recursos y assets de valor de las comunidades en las que participa el usuario.",
       body: "N/A"
+    },
+    {
+      method: "GET",
+      path: "/api/private/library/notes",
+      description: "Obtiene los apuntes privados de un usuario para una lección específica.",
+      body: "N/A"
+    },
+    {
+      method: "POST",
+      path: "/api/private/library/notes",
+      description: "Guarda o crea un nuevo apunte privado para una lección.",
+      body: "{ lessonId, content }"
+    },
+    {
+      method: "POST",
+      path: "/api/private/studio/modules",
+      description: "Crea un nuevo módulo de contenido en el Studio.",
+      body: "{ community_id, name, description, cover_image_url }"
+    },
+    {
+      method: "PUT",
+      path: "/api/private/studio/modules",
+      description: "Actualiza metadatos o estado de un módulo existente.",
+      body: "{ id, name, description, cover_image_url, is_active }"
+    },
+    {
+      method: "DELETE",
+      path: "/api/private/studio/modules",
+      description: "Elimina permanentemente un módulo y sus materiales hijos.",
+      body: "URL Param: ?id="
+    },
+    {
+      method: "POST",
+      path: "/api/private/studio/items",
+      description: "Añade un nuevo material (video/pdf) a un módulo en el Studio.",
+      body: "{ module_id, title, type, platform, media_url, access_level }"
+    },
+    {
+      method: "PUT",
+      path: "/api/private/studio/items",
+      description: "Actualiza metadatos o estado de visibilidad de un material.",
+      body: "{ id, title, type, platform, media_url, access_level, is_active }"
+    },
+    {
+      method: "DELETE",
+      path: "/api/private/studio/items",
+      description: "Elimina permanentemente un material educativo.",
+      body: "URL Param: ?id="
+    },
+    {
+      method: "PUT",
+      path: "/api/private/studio/items/reorder",
+      description: "Actualiza el orden de aparición de múltiples materiales en masa (Drag and Drop).",
+      body: "{ updates: [{ id, order_index }] }"
     }
   ];
 
