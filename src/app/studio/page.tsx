@@ -18,6 +18,52 @@ export default function CreatorStudioPage() {
   const [loadingApp, setLoadingApp] = useState(true);
   const [profileInput, setProfileInput] = useState({ full_name: '', bio: '', avatar_url: '', cover_url: '' });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Comms State
+  const [myCommunities, setMyCommunities] = useState<any[]>([]);
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
+  const [communityInput, setCommunityInput] = useState({ title: '', description: '', cover_image_url: '' });
+  const [savingCommunity, setSavingCommunity] = useState(false);
+  const [uploadingCommCover, setUploadingCommCover] = useState(false);
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>, field: 'cover_url' | 'avatar_url' | 'comm_cover') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (field === 'cover_url') setUploadingCover(true);
+    else if (field === 'avatar_url') setUploadingAvatar(true);
+    else setUploadingCommCover(true);
+
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/private/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session?.access_token}` },
+        body: formData
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      
+      if (field === 'comm_cover') {
+         setCommunityInput(prev => ({ ...prev, cover_image_url: url }));
+      } else {
+         setProfileInput(prev => ({ ...prev, [field]: url }));
+      }
+    } catch (err: any) {
+      alert("Error subiendo imagen: " + err.message);
+    } finally {
+      if (field === 'cover_url') setUploadingCover(false);
+      else if (field === 'avatar_url') setUploadingAvatar(false);
+      else setUploadingCommCover(false);
+      e.target.value = ''; // reset input
+    }
+  };
 
   useEffect(() => {
      async function loadAuth() {
@@ -51,6 +97,22 @@ export default function CreatorStudioPage() {
           avatar_url: profile.avatar_url || '', 
           cover_url: profile.cover_url || '' 
         });
+
+        const { data: comms } = await supabaseClient
+          .from('communities')
+          .select('*')
+          .eq('creator_id', profile.id);
+        
+        setMyCommunities(comms || []);
+        if (comms && comms.length > 0) {
+           setSelectedCommunityId(comms[0].id);
+           setCommunityInput({
+              title: comms[0].title || '',
+              description: comms[0].description || '',
+              cover_image_url: comms[0].cover_image_url || ''
+           });
+        }
+
         setLoadingApp(false);
      }
      loadAuth();
@@ -70,11 +132,43 @@ export default function CreatorStudioPage() {
       
       if (!error) {
          setUser({ ...user, full_name: profileInput.full_name, bio: profileInput.bio, avatar_url: profileInput.avatar_url, cover_url: profileInput.cover_url });
-         alert("Perfil actualizado correctamente");
       } else {
          alert("Error actualizando: " + error.message);
       }
       setSavingProfile(false);
+  };
+
+  const loadCommunityInfo = (id: string) => {
+      setSelectedCommunityId(id);
+      const com = myCommunities.find(c => c.id === id);
+      if (com) {
+         setCommunityInput({
+            title: com.title || '',
+            description: com.description || '',
+            cover_image_url: com.cover_image_url || ''
+         });
+      }
+  };
+
+  const saveCommunityInfo = async () => {
+      if (!selectedCommunityId) return;
+      setSavingCommunity(true);
+      const { error } = await supabaseClient
+         .from('communities')
+         .update({
+            title: communityInput.title,
+            description: communityInput.description,
+            cover_image_url: communityInput.cover_image_url
+         })
+         .eq('id', selectedCommunityId)
+         .eq('creator_id', user.id);
+      
+      if (!error) {
+         setMyCommunities(prev => prev.map(c => c.id === selectedCommunityId ? { ...c, title: communityInput.title, description: communityInput.description, cover_image_url: communityInput.cover_image_url } : c));
+      } else {
+         alert("Error actualizando landing: " + error.message);
+      }
+      setSavingCommunity(false);
   };
 
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -492,7 +586,7 @@ export default function CreatorStudioPage() {
                      <h2 className="text-xl font-bold text-on-surface">Diseño de Landing Page</h2>
                      <p className="text-sm text-on-surface-variant">Edita los textos de venta, imágenes y promesas de tu ecosistema.</p>
                   </div>
-                  <Link href="/c/saas-builders-elite" className="shrink-0">
+                  <Link href={selectedCommunityId ? `/c/${selectedCommunityId}` : "#"} className="shrink-0">
                     <button className="px-6 py-2.5 bg-surface-container-highest text-on-surface hover:text-primary hover:bg-surface-container-low text-sm font-bold rounded-xl shadow-sm border border-outline-variant/20 active:scale-95 transition-all flex items-center gap-2">
                        <span className="material-symbols-outlined text-[18px]">visibility</span>
                        Ver Previsualización
@@ -503,9 +597,14 @@ export default function CreatorStudioPage() {
                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
                   <div className="lg:col-span-1 border border-outline-variant/20 bg-surface-container-lowest rounded-3xl p-6 h-fit shadow-sm">
                      <h3 className="font-bold text-sm uppercase tracking-widest text-on-surface-variant mb-4 pb-4 border-b border-outline-variant/10">Selecciona Comunidad</h3>
-                     <select className="w-full bg-surface-container-high border border-outline-variant/20 text-sm focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors appearance-none mb-6">
-                        <option>SaaS Builders Elite</option>
-                        <option>UI Design Hackers</option>
+                     <select 
+                        className="w-full bg-surface-container-high border border-outline-variant/20 text-sm focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors appearance-none mb-6 cursor-pointer"
+                        value={selectedCommunityId || ""}
+                        onChange={(e) => loadCommunityInfo(e.target.value)}
+                     >
+                        {myCommunities.map(c => (
+                           <option key={c.id} value={c.id}>{c.title}</option>
+                        ))}
                      </select>
                      
                      <div className="flex flex-col gap-2">
@@ -539,12 +638,13 @@ export default function CreatorStudioPage() {
                                  </div>
                               </div>
                               <div className="w-full h-40 md:h-56 border-2 border-dashed border-outline-variant/50 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 hover:border-primary transition-all cursor-pointer group bg-surface overflow-hidden relative shadow-inner">
-                                 <img src="https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif" alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-20 transition-opacity" />
+                                 <input type="file" accept="image/*" onChange={e => handleUploadImage(e, 'comm_cover')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" />
+                                 <img src={communityInput.cover_image_url || "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif"} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover opacity-80 transition-opacity" />
                                  
-                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                                  
-                                 <span className="material-symbols-outlined text-4xl mb-2 text-on-surface z-10 transition-transform group-hover:-translate-y-2 group-hover:text-primary drop-shadow-md">cloud_upload</span>
-                                 <span className="text-sm font-bold z-10 text-on-surface drop-shadow-md">Click o arrastra para reemplazar la portada</span>
+                                 <span className="material-symbols-outlined text-4xl mb-2 z-10 text-white drop-shadow-md">{uploadingCommCover ? 'refresh' : 'cloud_upload'}</span>
+                                 <span className="text-sm font-bold z-10 text-white drop-shadow-md px-2 text-center">{uploadingCommCover ? 'Subiendo...' : 'Click para reemplazar portada'}</span>
                               </div>
                               <div className="text-xs text-amber-600 font-medium mt-3 flex items-start gap-2 bg-amber-500/10 p-3 rounded-lg border border-amber-500/20">
                                  <span className="material-symbols-outlined text-[18px] shrink-0">info</span>
@@ -576,34 +676,29 @@ export default function CreatorStudioPage() {
                      <div className="border border-outline-variant/20 bg-surface-container-lowest rounded-3xl p-8 shadow-sm">
                         <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4 mb-2">
                            <h3 className="font-bold text-xl text-on-surface">Textos (Copywriting)</h3>
-                           <button className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-lg hover:bg-primary-container active:scale-95 transition-all w-full md:w-auto">Guardar Textos</button>
+                           <button onClick={saveCommunityInfo} disabled={savingCommunity || !selectedCommunityId} className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-lg hover:bg-primary-container active:scale-95 transition-all w-full md:w-auto flex items-center justify-center gap-2">
+                              {savingCommunity ? <span className="material-symbols-outlined animate-spin text-[18px]">refresh</span> : "Guardar Cambios"}
+                           </button>
                         </div>
                         <p className="text-sm text-on-surface-variant font-medium mb-8">El mensaje de venta principal de tu página.</p>
                         
                         <div className="flex flex-col gap-6">
                            <div>
-                              <label className="block text-xs font-bold text-on-surface mb-2">Nombre Público / Título Gigante <span className="text-red-500">*</span></label>
+                              <label className="block text-xs font-bold text-on-surface mb-2">Nombre de la Comunidad <span className="text-red-500">*</span></label>
                               <input 
                                  type="text" 
-                                 defaultValue="SaaS Builders Elite" 
-                                 className="w-full bg-surface-container-high border-2 border-outline-variant/10 focus:border-primary rounded-xl px-4 py-3 text-on-surface font-bold outline-none transition-colors"
-                              />
-                           </div>
-                           
-                           <div>
-                              <label className="block text-xs font-bold text-on-surface mb-2">Categoría Visual (Top badge)</label>
-                              <input 
-                                 type="text" 
-                                 defaultValue="Tecnología" 
+                                 value={communityInput.title}
+                                 onChange={e => setCommunityInput({...communityInput, title: e.target.value})}
                                  className="w-full bg-surface-container-high border-2 border-outline-variant/10 focus:border-primary rounded-xl px-4 py-3 text-on-surface font-bold outline-none transition-colors"
                               />
                            </div>
 
                            <div>
-                              <label className="block text-xs font-bold text-on-surface mb-2">Mensaje Explicativo ("Acerca de este Ecosistema")</label>
+                              <label className="block text-xs font-bold text-on-surface mb-2">Promesa / Descripción Corta</label>
                               <textarea 
                                  rows={5}
-                                 defaultValue="Bienvenido a SaaS Builders Elite. Aquí no solo aprenderás teoría, sino que aplicarás en tiempo real las mismas estrategias que utilizamos en nuestras propias operaciones para generar resultados de alto impacto..."
+                                 value={communityInput.description}
+                                 onChange={e => setCommunityInput({...communityInput, description: e.target.value})}
                                  className="w-full bg-surface-container-high border-2 border-outline-variant/10 focus:border-primary rounded-xl px-4 py-3 text-on-surface font-medium outline-none transition-colors resize-y min-h-[140px]"
                               ></textarea>
                            </div>
@@ -640,11 +735,16 @@ export default function CreatorStudioPage() {
                         </h3>
                         <p className="text-sm text-on-surface-variant font-medium mb-6">La imagen principal de fondo que transmite tu vibra.</p>
                         
-                        <div className="w-full h-32 md:h-40 border-2 border-dashed border-outline-variant/30 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 hover:border-primary transition-all group bg-surface overflow-hidden relative shadow-inner mb-4">
+                        <div className="w-full h-32 md:h-40 border-2 border-dashed border-outline-variant/30 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 hover:border-primary transition-all group bg-surface overflow-hidden relative shadow-inner mb-4 cursor-pointer">
+                           <input type="file" accept="image/*" onChange={e => handleUploadImage(e, 'cover_url')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" />
                            <img src={profileInput.cover_url || `https://picsum.photos/1920/400?blur=1`} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover opacity-80 transition-opacity" />
                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
-                           <span className="material-symbols-outlined text-4xl mb-2 text-white z-10 drop-shadow-md">wallpaper</span>
-                           <span className="text-sm font-bold z-10 text-white drop-shadow-md px-4 text-center">Vista Previa de Portada</span>
+                           <span className="material-symbols-outlined text-4xl mb-2 text-white z-10 drop-shadow-md">
+                              {uploadingCover ? 'refresh' : 'wallpaper'}
+                           </span>
+                           <span className="text-sm font-bold z-10 text-white drop-shadow-md px-4 text-center">
+                              {uploadingCover ? 'Subiendo...' : 'Click para subir portada'}
+                           </span>
                         </div>
                         <div>
                            <label className="block text-xs font-bold text-on-surface mb-2">Enlace de Imagen (URL Portada)</label>
@@ -665,7 +765,7 @@ export default function CreatorStudioPage() {
                         </h3>
                         <div className="flex flex-col gap-5">
                            <div>
-                              <label className="block text-xs font-bold text-on-surface mb-2">Avatar del Creador (URL)</label>
+                              <label className="block text-xs font-bold text-on-surface mb-2">Avatar del Creador (Imagen JPG/PNG)</label>
                               <div className="flex gap-4 items-center mb-4">
                                  <div className="w-16 h-16 rounded-full border-2 border-outline-variant/20 flex items-center justify-center bg-surface overflow-hidden shrink-0">
                                     {profileInput.avatar_url ? (
@@ -674,13 +774,18 @@ export default function CreatorStudioPage() {
                                        <span className="text-xl font-bold uppercase">{profileInput.full_name?.charAt(0) || "U"}</span>
                                     )}
                                  </div>
-                                 <input 
-                                    type="text" 
-                                    placeholder="https://..."
-                                    value={profileInput.avatar_url}
-                                    onChange={(e) => setProfileInput({...profileInput, avatar_url: e.target.value})}
-                                    className="w-full bg-surface-container-high border-2 border-outline-variant/10 focus:border-primary rounded-xl px-4 py-3 text-on-surface font-medium outline-none transition-colors"
-                                 />
+                                 <div className="relative">
+                                    <button className="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high rounded-xl text-sm font-bold flex items-center gap-2 border border-outline-variant/10 text-on-surface transition-colors cursor-pointer pointer-events-none">
+                                       <span className="material-symbols-outlined text-[18px]">{uploadingAvatar ? 'refresh' : 'upload'}</span>
+                                       {uploadingAvatar ? 'Subiendo...' : 'Subir Imagen'}
+                                    </button>
+                                    <input 
+                                       type="file" 
+                                       accept="image/*"
+                                       onChange={(e) => handleUploadImage(e, 'avatar_url')}
+                                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    />
+                                 </div>
                               </div>
                            </div>
                            <div>
