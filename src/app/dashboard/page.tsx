@@ -193,7 +193,7 @@ export default function MyCommunitiesPage() {
             ) : (
             myCommunities.map((community) => (
               <div
-                onClick={() => router.push(`/c/${community.id}`)}
+                onClick={() => router.push(`/classroom?c=${community.id}`)}
                 key={community.id}
                 className="bg-surface-container-lowest border border-outline-variant/20 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col cursor-pointer"
               >

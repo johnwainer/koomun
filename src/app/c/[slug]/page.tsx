@@ -80,7 +80,7 @@ export default function CommunityLandingPage() {
 
   const handleJoin = async () => {
      if (isMember) {
-        router.push('/dashboard');
+        router.push(`/classroom?c=${community.id}`);
         return;
      }
 

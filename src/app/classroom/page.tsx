@@ -6,11 +6,12 @@ import Link from "next/link";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import CommunitySwitcher from "@/components/CommunitySwitcher";
 import type { MyCommunity } from "@/components/CommunitySwitcher";
 import AccessMessage from "@/components/AccessMessage";
 import { supabaseClient } from "@/lib/supabase";
+import { Suspense } from "react";
 
 // --- Tipos de Datos ---
 type Course = {
@@ -40,8 +41,10 @@ type Module = {
   items: Lesson[];
 };
 
-export default function ClassroomPage() {
+function ClassroomPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetCommunityId = searchParams.get("c");
   const [activeCommunity, setActiveCommunity] = useState<MyCommunity | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [activeCourse, setActiveCourse] = useState<Course | null>(null);
@@ -148,7 +151,7 @@ export default function ClassroomPage() {
       <main className="lg:ml-64 pt-16 px-0 sm:px-4 lg:px-8 pb-20 min-h-screen bg-surface flex flex-col relative">
         <CommunitySwitcher 
           maxWidth="max-w-7xl" 
-          activeId={activeCommunity?.id} 
+          activeId={targetCommunityId || undefined} 
           onChange={handleCommunityChange} 
           onLoad={(_, s) => setAccessState(s)} 
         />
@@ -580,5 +583,13 @@ export default function ClassroomPage() {
       </main>
       <BottomNavBar />
     </>
+  );
+}
+
+export default function ClassroomPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface flex items-center justify-center border-t border-outline-variant/10"><span className="material-symbols-outlined animate-spin text-4xl text-primary">autorenew</span></div>}>
+      <ClassroomPageContent />
+    </Suspense>
   );
 }
