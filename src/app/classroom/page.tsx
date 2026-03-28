@@ -28,6 +28,7 @@ type Course = {
   image: string;
   progress: number;
   author: string;
+  items?: Lesson[];
 };
 
 type Lesson = {
@@ -253,7 +254,7 @@ function ClassroomPageContent() {
                    {courses.map(course => (
                   <article 
                     key={course.id} 
-                    onClick={() => { setActiveCourse(course); setActiveLesson(null); }} 
+                    onClick={() => { setActiveCourse(course); setActiveLesson(course.items && course.items.length > 0 ? course.items[0] : null); }} 
                     className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-outline-variant/30 cursor-pointer transition-all group flex flex-col"
                   >
                      <div className="h-48 relative overflow-hidden bg-surface-container-high">
