@@ -81,10 +81,45 @@ function ClassroomPageContent() {
      setSavedItems(prev => ({...prev, [id]: !prev[id]}));
   };
 
-  const handlePostComment = () => {
-     if(commentInput.trim().length > 0) {
-        setCommentsList(prev => [...prev, { text: commentInput, user: 'Usuario Nuevo', date: new Date().toISOString() }]);
+  const loadNotes = async (lessonId: string) => {
+     try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) return;
+        const res = await fetch(`/api/private/library/notes?lessonId=${lessonId}`, {
+           headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+        if (res.ok) {
+           const data = await res.json();
+           setCommentsList(data.notes.map((n: any) => ({ text: n.content, user: 'Tú (Privado)' })));
+        }
+     } catch(e) {}
+  };
+
+  useEffect(() => {
+     if (activeLesson) {
+        loadNotes(activeLesson.id);
+     } else {
+        setCommentsList([]);
+     }
+  }, [activeLesson]);
+
+  const handlePostComment = async () => {
+     if(commentInput.trim().length > 0 && activeLesson) {
+        const tempText = commentInput.trim();
         setCommentInput("");
+        setCommentsList(prev => [...prev, { text: tempText, user: 'Tú (Privado)' }]);
+        try {
+           const { data: { session } } = await supabaseClient.auth.getSession();
+           await fetch('/api/private/library/notes', {
+              method: 'POST',
+              headers: { 
+                 'Content-Type': 'application/json',
+                 ...(session ? { Authorization: `Bearer ${session.access_token}` } : {})
+              },
+              body: JSON.stringify({ lessonId: activeLesson.id, content: tempText })
+           });
+           loadNotes(activeLesson.id);
+        } catch(e) {}
      }
   };
 
@@ -210,7 +245,7 @@ function ClassroomPageContent() {
                    {courses.map(course => (
                   <article 
                     key={course.id} 
-                    onClick={() => setActiveCourse(course)} 
+                    onClick={() => { setActiveCourse(course); setActiveLesson(null); }} 
                     className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-outline-variant/30 cursor-pointer transition-all group flex flex-col"
                   >
                      <div className="h-48 relative overflow-hidden bg-surface-container-high">
@@ -420,9 +455,12 @@ function ClassroomPageContent() {
 
                   <div className="mt-12 pt-8 border-t border-outline-variant/10">
                      <h4 className="text-lg font-bold mb-6 flex items-center gap-2 text-on-surface">
-                       <span className="material-symbols-outlined text-primary">forum</span>
-                       Comentarios ({commentsList.length})
+                       <span className="material-symbols-outlined text-primary">edit_note</span>
+                       Mis Apuntes Privados ({commentsList.length})
                      </h4>
+                     <p className="text-xs text-on-surface-variant mb-6 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[14px]">lock</span> Solo tú puedes ver estos apuntes.
+                     </p>
                      <div className="flex flex-col gap-6 mb-8">
                         {commentsList.map((c, i) => (
                            <div key={i} className="flex gap-4">
@@ -444,12 +482,12 @@ function ClassroomPageContent() {
                           <textarea 
                             value={commentInput}
                             onChange={(e) => setCommentInput(e.target.value)}
-                            placeholder="Deja una pregunta o comentario..."
+                            placeholder="Escribe tus apuntes personales sobre esta lección aquí..."
                             className="w-full bg-surface-container-low border border-transparent focus:border-primary/30 p-4 rounded-xl outline-none resize-none h-24 text-sm text-on-surface"
                           ></textarea>
                           <div className="flex justify-end">
                             <button onClick={handlePostComment} className="px-6 py-2 bg-primary/10 text-primary font-bold text-xs uppercase tracking-widest rounded-full hover:bg-primary/20 transition-colors outline-none cursor-pointer">
-                              Comentar
+                              Guardar Apunte
                             </button>
                           </div>
                         </div>

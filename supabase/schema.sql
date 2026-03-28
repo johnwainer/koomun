@@ -459,3 +459,20 @@ BEGIN
   END LOOP;
 
 END $$;
+
+CREATE TABLE public.lesson_notes (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  lesson_id UUID REFERENCES public.content_items(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(lesson_id, user_id)
+);
+
+ALTER TABLE public.lesson_notes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own lesson notes" 
+ON public.lesson_notes 
+FOR ALL USING (auth.uid() = user_id);
+
