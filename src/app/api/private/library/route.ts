@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     // Traer todos los módulos de esa comunidad (librería de contenidos)
     const { data: modules, error } = await supabaseClient
       .from('content_modules')
-      .select('id, title, order_index, cover_image_url')
+      .select('id, title, order_index, description, cover_image_url')
       .eq('community_id', communityId)
       .order('order_index', { ascending: true });
 

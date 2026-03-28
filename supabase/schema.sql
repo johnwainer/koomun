@@ -111,6 +111,7 @@ CREATE TABLE public.content_modules (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   community_id UUID REFERENCES public.communities(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
+  description TEXT,
   cover_image_url TEXT,
   order_index INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()

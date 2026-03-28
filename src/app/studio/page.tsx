@@ -386,6 +386,7 @@ export default function CreatorStudioPage() {
   // Modals
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
   const [moduleInputName, setModuleInputName] = useState("");
+  const [moduleInputDesc, setModuleInputDesc] = useState("");
   const [moduleImageUrl, setModuleImageUrl] = useState("");
   const [uploadingModuleImage, setUploadingModuleImage] = useState(false);
 
@@ -440,12 +441,16 @@ export default function CreatorStudioPage() {
   };
 
   const handleCreateModule = async () => {
-    if(!moduleInputName.trim() || !selectedCommunityId) return;
+    if(!moduleInputName.trim() || !moduleInputDesc.trim() || !moduleImageUrl || !selectedCommunityId) {
+       alert("Por favor completa el título, la descripción y sube la imagen de portada del módulo.");
+       return;
+    }
     
     const { data, error } = await supabaseClient.from('content_modules').insert({
        community_id: selectedCommunityId,
        title: moduleInputName,
-       cover_image_url: moduleImageUrl || null,
+       description: moduleInputDesc,
+       cover_image_url: moduleImageUrl,
        order_index: moduleNames.length
     }).select().single();
     
@@ -453,6 +458,7 @@ export default function CreatorStudioPage() {
        setModuleNames([...moduleNames, { id: data.id, name: data.title, count: 0 }]);
        setActiveModuleId(data.id);
        setModuleInputName("");
+       setModuleInputDesc("");
        setModuleImageUrl("");
        setIsModuleModalOpen(false);
     } else {
@@ -1483,17 +1489,27 @@ export default function CreatorStudioPage() {
                  <h3 className="text-xl font-bold text-on-surface mb-2">Nuevo Módulo</h3>
                  <p className="text-sm text-on-surface-variant mb-6">Agrupa tus lecciones en diferentes categorías (ej: Bienvenida, Semana 1, Conceptos base).</p>
                  
+                 <label className="block text-xs font-bold text-on-surface mb-2">Nombre del Módulo</label>
                  <input 
                     type="text" 
-                    placeholder="Nombre del módulo" 
+                    placeholder="Ej. Semana 1: Fundamentos" 
                     value={moduleInputName}
                     onChange={(e) => setModuleInputName(e.target.value)}
-                    className="w-full bg-surface-container-high border-2 border-outline-variant/20 focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors mb-6"
+                    className="w-full bg-surface-container-high border-2 border-outline-variant/20 focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors mb-4"
                     autoFocus
                  />
 
+                 <label className="block text-xs font-bold text-on-surface mb-2">Descripción Corta</label>
+                 <textarea 
+                    rows={3}
+                    placeholder="Describe de qué trata este módulo..." 
+                    value={moduleInputDesc}
+                    onChange={(e) => setModuleInputDesc(e.target.value)}
+                    className="w-full bg-surface-container-high border-2 border-outline-variant/20 focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors mb-4 resize-none text-sm"
+                 ></textarea>
+
                  <div className="mb-6">
-                    <label className="block text-xs font-bold text-on-surface mb-2">Imagen de Portada del Módulo (Opcional)</label>
+                    <label className="block text-xs font-bold text-on-surface mb-2">Imagen de Portada del Módulo (Obligatoria)</label>
                     {moduleImageUrl ? (
                        <div className="relative w-full h-32 rounded-xl overflow-hidden border border-outline-variant/20 group">
                           <img src={moduleImageUrl} alt="Cover" className="w-full h-full object-cover" />
