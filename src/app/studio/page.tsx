@@ -261,7 +261,7 @@ export default function CreatorStudioPage() {
   const toggleAccess = async (id: string) => {
     const itemTarget = contentItems.find(i => i.id === id);
     if (!itemTarget) return;
-    const nextAccess = itemTarget.access === "Gratis" ? "Premium" : itemTarget.access === "Premium" ? "Pago Especial" : "Gratis";
+    const nextAccess = itemTarget.access === "Muestra Gratis" ? "Premium" : itemTarget.access === "Premium" ? "Pago Especial" : "Muestra Gratis";
     
     // Update DB
     await supabaseClient.from('content_items').update({ access_level: nextAccess }).eq('id', id);
@@ -388,7 +388,7 @@ export default function CreatorStudioPage() {
   const [moduleInputName, setModuleInputName] = useState("");
 
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
-  const [materialInput, setMaterialInput] = useState({ title: "", type: "VIDEO", platform: "youtube", access: "Gratis", description: "", price: "", video_url: "", media_url: "" });
+  const [materialInput, setMaterialInput] = useState({ title: "", type: "VIDEO", platform: "youtube", access: "Muestra Gratis", description: "", price: "", video_url: "", media_url: "" });
   const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
   
   const handleUploadMaterialFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -429,7 +429,7 @@ export default function CreatorStudioPage() {
        setModuleInputName("");
        setIsModuleModalOpen(false);
     } else {
-       alert("Error creating module: " + error.message);
+       alert("Error creating module: " + (error?.message || 'Unknown error'));
     }
   };
 
@@ -446,13 +446,13 @@ export default function CreatorStudioPage() {
     const { data: insertedItem, error } = await supabaseClient.from('content_items').insert({
        module_id: activeModuleId,
        title: materialInput.title,
-       type: materialInput.type === 'PDF' ? 'pdf' : 'video',
-       platform: materialInput.type === "PDF" ? "pdf" : materialInput.platform,
-       duration_string: materialInput.type === "PDF" ? "1.2 MB" : "10:00 mins",
+       type: materialInput.type,
+       platform: materialInput.type === "PDF" ? null : materialInput.platform,
+       duration_string: materialInput.type === "PDF" ? "PDF Protegido" : "Video",
        is_secure: materialInput.type === "PDF",
        access_level: materialInput.access,
        order_index: contentItems.length,
-       [materialInput.type === 'PDF' ? 'media_url' : 'video_url']: materialInput.type === 'PDF' ? materialInput.media_url : materialInput.video_url
+       media_url: materialInput.type === 'PDF' ? materialInput.media_url : materialInput.video_url
     }).select().single();
 
     if (!error && insertedItem) {
@@ -468,10 +468,10 @@ export default function CreatorStudioPage() {
         };
         setContentItems([...contentItems, newItem]);
         setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count + 1 } : m));
-        setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Gratis", description: "", price: "", video_url: "", media_url: "" });
+        setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Muestra Gratis", description: "", price: "", video_url: "", media_url: "" });
         setIsMaterialModalOpen(false);
     } else {
-        alert("Error creating material: " + error.message);
+        alert("Error creating material: " + (error?.message || 'Unknown error'));
     }
   };
 
@@ -1137,7 +1137,7 @@ export default function CreatorStudioPage() {
                                  {/* Access Badge */}
                                  <button onClick={() => toggleAccess(item.id)} className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full">
                                     <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer ${
-                                       item.access === "Gratis" ? "text-green-600 bg-green-500/10 hover:bg-green-500/20" : 
+                                       item.access === "Muestra Gratis" ? "text-green-600 bg-green-500/10 hover:bg-green-500/20" : 
                                        item.access === "Premium" ? "text-amber-600 bg-amber-500/10 hover:bg-amber-500/20" : 
                                        "text-purple-600 bg-purple-500/10 hover:bg-purple-500/20"
                                     }`}>
@@ -1150,7 +1150,7 @@ export default function CreatorStudioPage() {
                                     {/* Botón Visibilidad/Ojo (Visual toggles based on status) */}
                                     <div className="text-outline-variant p-2 pointer-events-none">
                                        <span className="material-symbols-outlined text-[16px] sm:text-[18px]">
-                                          {item.access === "Gratis" ? 'visibility' : item.access === "Premium" ? 'visibility_off' : 'verified_user'}
+                                          {item.access === "Muestra Gratis" ? 'visibility' : item.access === "Premium" ? 'visibility_off' : 'verified_user'}
                                        </span>
                                     </div>
                                     
