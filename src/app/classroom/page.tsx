@@ -13,6 +13,13 @@ import AccessMessage from "@/components/AccessMessage";
 import { supabaseClient } from "@/lib/supabase";
 import { Suspense } from "react";
 
+function getYouTubeId(url: string | undefined | null) {
+  if (!url) return '';
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : url;
+}
+
 // --- Tipos de Datos ---
 type Course = {
   id: string;
@@ -334,10 +341,11 @@ function ClassroomPageContent() {
                     <div className="w-full aspect-video bg-black rounded-xl lg:rounded-2xl overflow-hidden shadow-lg">
                       <iframe 
                         className="w-full h-full border-none" 
-                        src={`https://www.youtube.com/embed/${activeLesson.media_url ? activeLesson.media_url.replace('https://youtube.com/watch?v=', '').replace('https://youtu.be/', '') : ''}?rel=0&modestbranding=1`}
+                        src={`https://www.youtube.com/embed/${getYouTubeId(activeLesson.media_url)}?rel=0&modestbranding=1&controls=0&showinfo=0&iv_load_policy=3&disablekb=1&wmode=transparent`}
                         title="YouTube video player" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowFullScreen
+                        style={{ pointerEvents: 'auto' }}
                       ></iframe>
                     </div>
                   ) : activeLesson.platform === "vimeo" ? (
