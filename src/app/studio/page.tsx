@@ -388,7 +388,31 @@ export default function CreatorStudioPage() {
   const [moduleInputName, setModuleInputName] = useState("");
 
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
-  const [materialInput, setMaterialInput] = useState({ title: "", type: "VIDEO", platform: "youtube", access: "Incluido", description: "", price: "" });
+  const [materialInput, setMaterialInput] = useState({ title: "", type: "VIDEO", platform: "youtube", access: "Gratis", description: "", price: "", video_url: "", media_url: "" });
+  const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
+  
+  const handleUploadMaterialFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     if (!file) return;
+     setUploadingMaterialFile(true);
+     try {
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       const formData = new FormData();
+       formData.append('file', file);
+       const res = await fetch('/api/private/upload', {
+         method: 'POST',
+         headers: { 'Authorization': `Bearer ${session?.access_token}` },
+         body: formData
+       });
+       if (!res.ok) throw new Error("Upload failed");
+       const { url } = await res.json();
+       setMaterialInput(prev => ({ ...prev, media_url: url }));
+     } catch (err: any) {
+       alert("Error subiendo archivo: " + err.message);
+     } finally {
+       setUploadingMaterialFile(false);
+     }
+  };
 
   const handleCreateModule = async () => {
     if(!moduleInputName.trim() || !selectedCommunityId) return;
@@ -428,7 +452,7 @@ export default function CreatorStudioPage() {
        is_secure: materialInput.type === "PDF",
        access_level: materialInput.access,
        order_index: contentItems.length,
-       [materialInput.type === 'PDF' ? 'media_url' : 'video_url']: "mocked-for-now" // In a real flow, a file upload goes here. User didn't request full file upload block inside the modal yet.
+       [materialInput.type === 'PDF' ? 'media_url' : 'video_url']: materialInput.type === 'PDF' ? materialInput.media_url : materialInput.video_url
     }).select().single();
 
     if (!error && insertedItem) {
@@ -444,7 +468,7 @@ export default function CreatorStudioPage() {
         };
         setContentItems([...contentItems, newItem]);
         setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count + 1 } : m));
-        setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Gratis", description: "", price: "" });
+        setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Gratis", description: "", price: "", video_url: "", media_url: "" });
         setIsMaterialModalOpen(false);
     } else {
         alert("Error creating material");
@@ -1496,6 +1520,36 @@ export default function CreatorStudioPage() {
                        )}
                     </div>
 
+                                        {/* Contenido / Url Upload */}
+                    {materialInput.type === "VIDEO" && (
+                       <div className="animate-in fade-in slide-in-from-top-2">
+                          <label className="block text-xs font-bold text-on-surface mb-1">Enlace del Video (URL)</label>
+                          <input 
+                             type="url" 
+                             placeholder="Ej. https://youtube.com/watch?v=..." 
+                             value={materialInput.video_url}
+                             onChange={(e) => setMaterialInput({...materialInput, video_url: e.target.value})}
+                             className="w-full bg-surface-container-high border border-outline-variant/20 focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors"
+                          />
+                       </div>
+                    )}
+                    
+                    {materialInput.type === "PDF" && (
+                       <div className="animate-in fade-in slide-in-from-top-2">
+                          <label className="block text-xs font-bold text-on-surface mb-1">Archivo Documento Segurizado</label>
+                          <div className="w-full bg-surface-container-high border-2 border-dashed border-outline-variant/50 hover:border-primary rounded-xl px-4 py-6 flex flex-col items-center justify-center transition-colors cursor-pointer relative overflow-hidden group">
+                             <input type="file" accept=".pdf" onChange={handleUploadMaterialFile} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" />
+                             <span className="material-symbols-outlined text-3xl text-outline-variant group-hover:text-primary mb-2 transition-colors">
+                                {uploadingMaterialFile ? 'refresh' : 'picture_as_pdf'}
+                             </span>
+                             <span className="text-sm font-bold text-on-surface">
+                                {uploadingMaterialFile ? 'Subiendo Documento...' : materialInput.media_url ? 'Archivo Subido (Click para reemplazar)' : 'Haz click o arrastra tu PDF'}
+                             </span>
+                          </div>
+                          {materialInput.media_url && !uploadingMaterialFile && <p className="text-green-600 text-xs mt-2 font-bold break-all flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">check_circle</span> Documento cargado exitosamente.</p>}
+                       </div>
+                    )}
+
                     {/* LIMITATION ALERTS */}
                     {materialInput.type === "NATIVE" && (
                         <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex items-start gap-4">
@@ -1599,7 +1653,7 @@ export default function CreatorStudioPage() {
                     <button onClick={() => setIsMaterialModalOpen(false)} className="px-5 py-2.5 font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors">Cancelar</button>
                     <button 
                        onClick={handleCreateMaterial} 
-                       disabled={materialInput.type === "NATIVE" || (materialInput.type === "PDF" && hasPDFUploaded)}
+                       disabled={materialInput.type === "NATIVE" || (materialInput.type === "PDF" && hasPDFUploaded) || uploadingMaterialFile || (materialInput.type === 'VIDEO' && !materialInput.video_url) || (materialInput.type === 'PDF' && !materialInput.media_url)}
                        className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed shadow-md active:scale-95 transition-all flex items-center gap-2"
                     >
                        <span className="material-symbols-outlined text-[16px]">cloud_upload</span> Cargar a Módulo
