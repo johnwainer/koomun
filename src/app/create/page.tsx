@@ -215,16 +215,6 @@ export default function CreateCommunityPage() {
                        </span>
                     </div>
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-on-surface mb-2">Icono o Logotipo</label>
-                    <div className="flex items-center gap-6">
-                       <div className="w-20 h-20 rounded-full bg-surface-container-highest border-2 border-outline-variant/20 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-3xl text-outline-variant">add_photo_alternate</span>
-                       </div>
-                       <button className="px-4 py-2 border border-outline-variant/30 rounded-lg text-sm font-bold hover:bg-surface-container-high transition-colors text-on-surface">Subir Icono</button>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}

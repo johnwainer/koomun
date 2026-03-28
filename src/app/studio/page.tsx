@@ -254,27 +254,39 @@ export default function CreatorStudioPage() {
     }
   };
 
-  // Mock data for Drag & Drop Contents
-  const [contentItems, setContentItems] = useState([
-    { id: "mod1", title: "Fundamentos de Lanzamiento", type: "VIDEO", platform: "vimeo", time: "14:22 mins", date: "Creado hace 2 meses", access: "Muestra Gratis", secure: false },
-    { id: "mod2", title: "Cómo conseguir los primeros 100 clientes", type: "VIDEO", platform: "youtube", time: "42:10 mins", date: "Creado hace 1 mes", access: "Premium", secure: false },
-    { id: "mod3", title: "Plantillas de Cold Email", type: "PDF", platform: "pdf", time: "2.4 MB", date: "Creado hace 2 semanas", access: "Pago Especial", secure: true }
-  ]);
-
+  // Contenidos Reales DB
+  const [contentItems, setContentItems] = useState<any[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
-  const toggleAccess = (id: string) => {
+  const toggleAccess = async (id: string) => {
+    const itemTarget = contentItems.find(i => i.id === id);
+    if (!itemTarget) return;
+    const nextAccess = itemTarget.access === "Gratis" ? "Premium" : itemTarget.access === "Premium" ? "Pago Especial" : "Gratis";
+    
+    // Update DB
+    await supabaseClient.from('content_items').update({ access_level: nextAccess }).eq('id', id);
+    
+    // Update Local UI
     setContentItems(items => items.map(item => {
       if (item.id === id) {
-        const nextAccess = item.access === "Muestra Gratis" ? "Premium" : item.access === "Premium" ? "Pago Especial" : "Muestra Gratis";
         return { ...item, access: nextAccess };
       }
       return item;
     }));
   };
 
-  const deleteItem = (id: string) => {
+  const deleteItem = async (id: string) => {
+    if (!confirm("¿Seguro que deseas eliminar este contenido?")) return;
+    await supabaseClient.from('content_items').delete().eq('id', id);
     setContentItems(items => items.filter(item => item.id !== id));
+    setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count - 1 } : m));
+  };
+
+  const deleteModule = async (id: string) => {
+    if (!confirm("¿Eliminar este módulo enteramente con su contenido?")) return;
+    await supabaseClient.from('content_modules').delete().eq('id', id);
+    setModuleNames(prev => prev.filter(m => m.id !== id));
+    if (activeModuleId === id) setActiveModuleId(null);
   };
 
   const onDragStart = (e: React.DragEvent, idx: number) => {
@@ -286,7 +298,6 @@ export default function CreatorStudioPage() {
     e.preventDefault();
     if (draggedIdx === null || draggedIdx === idx) return;
     
-    // Swap on enter
     const items = [...contentItems];
     const draggedItem = items[draggedIdx];
     items.splice(draggedIdx, 1);
@@ -296,18 +307,81 @@ export default function CreatorStudioPage() {
     setContentItems(items);
   };
   
-  const onDrop = (e: React.DragEvent) => {
+  const onDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    if (draggedIdx !== null) {
+       // Save new order to DB
+       const updates = contentItems.map((it, i) => ({ id: it.id, order_index: i }));
+       // Unfortunately we have to update them one by one or via rpc. Let's do parallel updates contextually.
+       const promises = updates.map(up => supabaseClient.from('content_items').update({ order_index: up.order_index }).eq('id', up.id));
+       await Promise.all(promises);
+    }
     setDraggedIdx(null);
   };
 
-  // Modulos State
-  const [moduleNames, setModuleNames] = useState([
-    { id: "mod_gtm", name: "Estrategia GTM", count: 3 },
-    { id: "mod_sales", name: "Ventas B2B", count: 2 },
-    { id: "mod_dev", name: "Desarrollo de Producto", count: 5 }
-  ]);
-  const [activeModuleId, setActiveModuleId] = useState("mod_gtm");
+  // Modulos Reales DB
+  const [moduleNames, setModuleNames] = useState<any[]>([]);
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+
+  useEffect(() => {
+     async function fetchModules() {
+        if (!selectedCommunityId) {
+            setModuleNames([]);
+            return;
+        }
+        const { data } = await supabaseClient
+           .from('content_modules')
+           .select('id, title, order_index, content_items(count)')
+           .eq('community_id', selectedCommunityId)
+           .order('order_index', { ascending: true });
+           
+        if (data) {
+           const mapped = data.map((m: any) => ({
+              id: m.id,
+              name: m.title,
+              count: m.content_items[0]?.count || 0,
+              order_index: m.order_index
+           }));
+           setModuleNames(mapped);
+           if (mapped.length > 0 && (!activeModuleId || !mapped.find((x: any) => x.id === activeModuleId))) {
+              setActiveModuleId(mapped[0].id);
+           }
+        }
+     }
+     if (activeTab === "contenido") fetchModules();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCommunityId, activeTab]);
+
+  useEffect(() => {
+     async function fetchItems() {
+        if (!activeModuleId) {
+           setContentItems([]);
+           return;
+        }
+        const { data } = await supabaseClient
+           .from('content_items')
+           .select('*')
+           .eq('module_id', activeModuleId)
+           .order('order_index', { ascending: true });
+           
+        if (data) {
+           setContentItems(data.map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              type: item.type === 'video' ? 'VIDEO' : 'PDF',
+              platform: item.platform,
+              time: item.duration_string || 'N/A',
+              date: new Date(item.created_at).toLocaleDateString(),
+              access: item.access_level,
+              secure: item.is_secure,
+              order_index: item.order_index,
+              url: item.video_url || item.media_url
+           })));
+        }
+     }
+     if (activeTab === "contenido") fetchItems();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeModuleId, activeTab]);
 
   // Modals
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
@@ -316,43 +390,68 @@ export default function CreatorStudioPage() {
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [materialInput, setMaterialInput] = useState({ title: "", type: "VIDEO", platform: "youtube", access: "Incluido", description: "", price: "" });
 
-  const handleCreateModule = () => {
-    if(!moduleInputName.trim()) return;
-    const newId = `mod_${Date.now()}`;
-    setModuleNames([...moduleNames, { id: newId, name: moduleInputName, count: 0 }]);
-    setActiveModuleId(newId);
-    setModuleInputName("");
-    setIsModuleModalOpen(false);
+  const handleCreateModule = async () => {
+    if(!moduleInputName.trim() || !selectedCommunityId) return;
+    
+    const { data, error } = await supabaseClient.from('content_modules').insert({
+       community_id: selectedCommunityId,
+       title: moduleInputName,
+       order_index: moduleNames.length
+    }).select().single();
+    
+    if (data && !error) {
+       setModuleNames([...moduleNames, { id: data.id, name: data.title, count: 0 }]);
+       setActiveModuleId(data.id);
+       setModuleInputName("");
+       setIsModuleModalOpen(false);
+    } else {
+       alert("Error creating module");
+    }
   };
 
-  const handleCreateMaterial = () => {
-    if(!materialInput.title.trim()) return;
+  const handleCreateMaterial = async () => {
+    if(!materialInput.title.trim() || !activeModuleId) return;
     
-    // Simulate FREE plan limitation blocks
     const hasPDF = contentItems.some(item => item.type === "PDF");
     if (materialInput.type === "PDF" && hasPDF && !isElite) {
        setShowUpgradeModal(true);
        return;
     }
-    if (materialInput.type === "NATIVE") return; // Block native
+    if (materialInput.type === "NATIVE") return; 
 
-    const newItem = {
-      id: `mat_${Date.now()}`,
-      title: materialInput.title,
-      type: materialInput.type,
-      platform: materialInput.type === "PDF" ? "pdf" : materialInput.platform,
-      time: materialInput.type === "PDF" ? "1.2 MB" : "10:00 mins",
-      date: "Justo ahora",
-      access: materialInput.access,
-      secure: materialInput.type === "PDF"
-    };
-    setContentItems([...contentItems, newItem]);
-    setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count + 1 } : m));
-    setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Incluido", description: "", price: "" });
-    setIsMaterialModalOpen(false);
+    const { data: insertedItem, error } = await supabaseClient.from('content_items').insert({
+       module_id: activeModuleId,
+       title: materialInput.title,
+       type: materialInput.type === 'PDF' ? 'pdf' : 'video',
+       platform: materialInput.type === "PDF" ? "pdf" : materialInput.platform,
+       duration_string: materialInput.type === "PDF" ? "1.2 MB" : "10:00 mins",
+       is_secure: materialInput.type === "PDF",
+       access_level: materialInput.access,
+       order_index: contentItems.length,
+       [materialInput.type === 'PDF' ? 'media_url' : 'video_url']: "mocked-for-now" // In a real flow, a file upload goes here. User didn't request full file upload block inside the modal yet.
+    }).select().single();
+
+    if (!error && insertedItem) {
+        const newItem = {
+          id: insertedItem.id,
+          title: insertedItem.title,
+          type: insertedItem.type === 'video' ? 'VIDEO' : 'PDF',
+          platform: insertedItem.platform,
+          time: insertedItem.duration_string,
+          date: new Date().toLocaleDateString(),
+          access: insertedItem.access_level,
+          secure: insertedItem.is_secure
+        };
+        setContentItems([...contentItems, newItem]);
+        setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count + 1 } : m));
+        setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Gratis", description: "", price: "" });
+        setIsMaterialModalOpen(false);
+    } else {
+        alert("Error creating material");
+    }
   };
 
-  const hasPDFUploaded = contentItems.some(item => item.type === "PDF");
+  const hasPDFUploaded = contentItems.some((item: any) => item.type === "PDF");
 
 
   // Mock data for members
@@ -928,28 +1027,34 @@ export default function CreatorStudioPage() {
                   {/* Menu lateral de Cursos vs Subidas */}
                   <div className="lg:col-span-1 border border-outline-variant/20 bg-surface-container-lowest rounded-3xl p-6 h-fit shadow-sm">
                      <h3 className="font-bold text-sm uppercase tracking-widest text-on-surface-variant mb-4 pb-4 border-b border-outline-variant/10">Selecciona Comunidad</h3>
-                     <select className="w-full bg-surface-container-high border border-outline-variant/20 text-sm focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors appearance-none mb-6">
-                        <option>SaaS Builders Elite</option>
-                        <option>UI Design Hackers</option>
-                     </select>
+                     <select 
+  className="w-full bg-surface-container-high border border-outline-variant/20 text-sm focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors appearance-none mb-6"
+  value={selectedCommunityId || ""}
+  onChange={(e) => loadCommunityInfo(e.target.value)}
+>
+  {myCommunities.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+</select>
 
                      <h3 className="font-bold text-sm uppercase tracking-widest text-on-surface-variant mb-4 pb-4 border-b border-outline-variant/10">Catálogo de Contenido</h3>
                      <ul className="flex flex-col gap-2">
                         {moduleNames.map((mod) => (
                            <li 
-                              key={mod.id} 
-                              onClick={() => setActiveModuleId(mod.id)}
-                              className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all shadow-sm ${
-                               activeModuleId === mod.id 
-                                 ? "bg-surface-container text-on-surface font-bold text-sm border-l-4 border-primary hover:shadow-md" 
-                                 : "text-on-surface-variant font-medium hover:bg-surface-container-low text-sm"
-                              }`}
-                           >
-                              {mod.name}
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${activeModuleId === mod.id ? 'bg-surface text-on-surface-variant' : 'bg-surface-container'}`}>
-                                 {mod.count} ítems
-                              </span>
-                           </li>
+  key={mod.id} 
+  onClick={() => setActiveModuleId(mod.id)}
+  className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all shadow-sm ${
+   activeModuleId === mod.id 
+     ? "bg-surface-container text-on-surface font-bold text-sm border-l-4 border-primary hover:shadow-md" 
+     : "text-on-surface-variant font-medium hover:bg-surface-container-low text-sm"
+   }`}
+>
+  <div className="flex-1 truncate pr-2">{mod.name}</div>
+  <div className="flex items-center gap-2">
+      <span className={`text-xs px-2 py-0.5 rounded-full ${activeModuleId === mod.id ? 'bg-surface text-on-surface-variant' : 'bg-surface-container'}`}>
+         {mod.count} ítems
+      </span>
+      <span onClick={(e) => { e.stopPropagation(); deleteModule(mod.id); }} className="material-symbols-outlined text-[16px] text-outline-variant hover:text-red-500 hover:bg-red-500/10 rounded p-1 transition-colors z-10 relative">delete</span>
+  </div>
+</li>
                         ))}
                         
                         <li 
@@ -1008,7 +1113,7 @@ export default function CreatorStudioPage() {
                                  {/* Access Badge */}
                                  <button onClick={() => toggleAccess(item.id)} className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full">
                                     <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full flex items-center gap-1 whitespace-nowrap transition-colors cursor-pointer ${
-                                       item.access === "Muestra Gratis" ? "text-green-600 bg-green-500/10 hover:bg-green-500/20" : 
+                                       item.access === "Gratis" ? "text-green-600 bg-green-500/10 hover:bg-green-500/20" : 
                                        item.access === "Premium" ? "text-amber-600 bg-amber-500/10 hover:bg-amber-500/20" : 
                                        "text-purple-600 bg-purple-500/10 hover:bg-purple-500/20"
                                     }`}>
@@ -1021,7 +1126,7 @@ export default function CreatorStudioPage() {
                                     {/* Botón Visibilidad/Ojo (Visual toggles based on status) */}
                                     <div className="text-outline-variant p-2 pointer-events-none">
                                        <span className="material-symbols-outlined text-[16px] sm:text-[18px]">
-                                          {item.access === "Muestra Gratis" ? 'visibility' : item.access === "Premium" ? 'visibility_off' : 'verified_user'}
+                                          {item.access === "Gratis" ? 'visibility' : item.access === "Premium" ? 'visibility_off' : 'verified_user'}
                                        </span>
                                     </div>
                                     
