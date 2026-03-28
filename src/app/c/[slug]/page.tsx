@@ -140,6 +140,11 @@ export default function CommunityLandingPage() {
   const isPaid = community.price_tier?.toLowerCase() !== 'gratis';
   const price = isPaid ? community.price_tier : "Gratis";
   
+  const MAGIC_DELIMITER = "||--FEATURES--||";
+  const descParts = (community.description || '').split(MAGIC_DELIMITER);
+  const cleanDescription = descParts[0] || '';
+  const parsedFeatures: {title: string, desc: string}[] = descParts[1] ? JSON.parse(descParts[1]) : [];
+  
   return (
     <>
       <TopNavBar />
@@ -212,7 +217,7 @@ export default function CommunityLandingPage() {
                  {community.title}
               </h1>
               <p className="text-on-surface-variant font-medium text-lg leading-relaxed max-w-3xl whitespace-pre-line">
-                 {community.description || "Únete a una comunidad enfocada en el progreso continuo."}
+                 {cleanDescription || "Únete a una comunidad enfocada en el progreso continuo."}
               </p>
            </div>
 
@@ -224,43 +229,58 @@ export default function CommunityLandingPage() {
                  <section>
                     <h2 className="text-2xl font-bold text-on-surface mb-6">Acerca de este Ecosistema</h2>
                     <p className="text-on-surface-variant leading-relaxed text-base mb-4 whitespace-pre-line">
-                       {community.description}
+                       {cleanDescription}
                     </p>
                  </section>
 
                  <section className="bg-surface-container-lowest border border-outline-variant/10 p-6 md:p-8 rounded-3xl shadow-sm">
                     <h3 className="text-xl font-bold text-on-surface mb-6">¿Qué vas a obtener exactamente?</h3>
-                    
                     <div className="flex flex-col gap-6">
-                       <div className="flex gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                             <span className="material-symbols-outlined text-2xl">forum</span>
-                          </div>
-                          <div>
-                             <h4 className="font-bold text-on-surface">Chat Privado y Networking</h4>
-                             <p className="text-sm text-on-surface-variant mt-1">Conecta 24/7 con otros miembros activos. Resuelve tus dudas en tiempo récord.</p>
-                          </div>
-                       </div>
-                       
-                       <div className="flex gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                             <span className="material-symbols-outlined text-2xl">play_lesson</span>
-                          </div>
-                          <div>
-                             <h4 className="font-bold text-on-surface">Librería de Contenidos Masterclass</h4>
-                             <p className="text-sm text-on-surface-variant mt-1">Más de 20 módulos en formato video y guías interactivas desbloqueadas de por vida.</p>
-                          </div>
-                       </div>
+                        {parsedFeatures.length > 0 ? (
+                           parsedFeatures.map((feat, i) => (
+                              <div key={i} className="flex gap-4">
+                                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                    <span className="material-symbols-outlined text-2xl">check_circle</span>
+                                 </div>
+                                 <div>
+                                    <h4 className="font-bold text-on-surface">{feat.title}</h4>
+                                    <p className="text-sm text-on-surface-variant mt-1">{feat.desc}</p>
+                                 </div>
+                              </div>
+                           ))
+                        ) : (
+                           <>
+                              <div className="flex gap-4">
+                                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                    <span className="material-symbols-outlined text-2xl">forum</span>
+                                 </div>
+                                 <div>
+                                    <h4 className="font-bold text-on-surface">Chat Privado y Networking</h4>
+                                    <p className="text-sm text-on-surface-variant mt-1">Conecta 24/7 con otros miembros activos. Resuelve tus dudas en tiempo récord.</p>
+                                 </div>
+                              </div>
+                              
+                              <div className="flex gap-4">
+                                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                    <span className="material-symbols-outlined text-2xl">play_lesson</span>
+                                 </div>
+                                 <div>
+                                    <h4 className="font-bold text-on-surface">Librería de Contenidos Masterclass</h4>
+                                    <p className="text-sm text-on-surface-variant mt-1">Más de 20 módulos en formato video y guías interactivas desbloqueadas de por vida.</p>
+                                 </div>
+                              </div>
 
-                       <div className="flex gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                             <span className="material-symbols-outlined text-2xl">groups</span>
-                          </div>
-                          <div>
-                             <h4 className="font-bold text-on-surface">Live Calls Semanales</h4>
-                             <p className="text-sm text-on-surface-variant mt-1">Mentorías en vivo para revisar tus avances y consultar dudas técnicas cara a cara.</p>
-                          </div>
-                       </div>
+                              <div className="flex gap-4">
+                                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                    <span className="material-symbols-outlined text-2xl">groups</span>
+                                 </div>
+                                 <div>
+                                    <h4 className="font-bold text-on-surface">Live Calls Semanales</h4>
+                                    <p className="text-sm text-on-surface-variant mt-1">Sesiones de preguntas y respuestas en vivo directo con el fundador de la comunidad.</p>
+                                 </div>
+                              </div>
+                           </>
+                        )}
                     </div>
                  </section>
                  {/* Eventos Section de esta Comunidad */}

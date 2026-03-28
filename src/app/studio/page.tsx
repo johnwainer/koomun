@@ -24,9 +24,12 @@ export default function CreatorStudioPage() {
   // Comms State
   const [myCommunities, setMyCommunities] = useState<any[]>([]);
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
-  const [communityInput, setCommunityInput] = useState({ title: '', description: '', cover_image_url: '' });
+  const [communityInput, setCommunityInput] = useState({ title: '', description: '', cover_image_url: '', features: [] as {title: string, desc: string}[] });
   const [savingCommunity, setSavingCommunity] = useState(false);
   const [uploadingCommCover, setUploadingCommCover] = useState(false);
+  
+  const [landingEditorTab, setLandingEditorTab] = useState<'visual' | 'copy' | 'features'>('visual');
+  const MAGIC_DELIMITER = "||--FEATURES--||";
 
   const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>, field: 'cover_url' | 'avatar_url' | 'comm_cover') => {
     const file = e.target.files?.[0];
@@ -106,10 +109,12 @@ export default function CreatorStudioPage() {
         setMyCommunities(comms || []);
         if (comms && comms.length > 0) {
            setSelectedCommunityId(comms[0].id);
+           const parts = (comms[0].description || '').split(MAGIC_DELIMITER);
            setCommunityInput({
               title: comms[0].title || '',
-              description: comms[0].description || '',
-              cover_image_url: comms[0].cover_image_url || ''
+              description: parts[0] || '',
+              cover_image_url: comms[0].cover_image_url || '',
+              features: parts[1] ? JSON.parse(parts[1]) : []
            });
         }
 
@@ -142,10 +147,12 @@ export default function CreatorStudioPage() {
       setSelectedCommunityId(id);
       const com = myCommunities.find(c => c.id === id);
       if (com) {
+         const parts = (com.description || '').split(MAGIC_DELIMITER);
          setCommunityInput({
             title: com.title || '',
-            description: com.description || '',
-            cover_image_url: com.cover_image_url || ''
+            description: parts[0] || '',
+            cover_image_url: com.cover_image_url || '',
+            features: parts[1] ? JSON.parse(parts[1]) : []
          });
       }
   };
@@ -153,11 +160,16 @@ export default function CreatorStudioPage() {
   const saveCommunityInfo = async () => {
       if (!selectedCommunityId) return;
       setSavingCommunity(true);
+      
+      const combinedDescription = communityInput.features.length > 0 
+        ? `${communityInput.description}${MAGIC_DELIMITER}${JSON.stringify(communityInput.features)}`
+        : communityInput.description;
+
       const { error } = await supabaseClient
          .from('communities')
          .update({
             title: communityInput.title,
-            description: communityInput.description,
+            description: combinedDescription,
             cover_image_url: communityInput.cover_image_url
          })
          .eq('id', selectedCommunityId)
@@ -558,20 +570,31 @@ export default function CreatorStudioPage() {
                      </select>
                      
                      <div className="flex flex-col gap-2">
-                        <div className="p-3 bg-surface-container text-primary font-bold text-sm border-l-4 border-primary rounded-xl cursor-default flex items-center gap-3">
+                        <div 
+                           onClick={() => setLandingEditorTab('visual')}
+                           className={`p-3 font-bold text-sm rounded-xl cursor-pointer flex items-center gap-3 transition-colors ${landingEditorTab === 'visual' ? 'bg-surface-container text-primary border-l-4 border-primary' : 'text-on-surface-variant hover:bg-surface-container-low'}`}
+                        >
                            <span className="material-symbols-outlined text-[18px]">image</span> Diseño Visual (Imágenes)
                         </div>
-                        <div className="p-3 text-on-surface-variant font-medium text-sm hover:bg-surface-container-low rounded-xl cursor-pointer flex items-center gap-3 transition-colors">
+                        <div 
+                           onClick={() => setLandingEditorTab('copy')}
+                           className={`p-3 font-bold text-sm rounded-xl cursor-pointer flex items-center gap-3 transition-colors ${landingEditorTab === 'copy' ? 'bg-surface-container text-primary border-l-4 border-primary' : 'text-on-surface-variant hover:bg-surface-container-low'}`}
+                        >
                            <span className="material-symbols-outlined text-[18px]">edit_note</span> Textos Clave y Títulos
                         </div>
-                        <div className="p-3 text-on-surface-variant font-medium text-sm hover:bg-surface-container-low rounded-xl cursor-pointer flex items-center gap-3 transition-colors">
+                        <div 
+                           onClick={() => setLandingEditorTab('features')}
+                           className={`p-3 font-bold text-sm rounded-xl cursor-pointer flex items-center gap-3 transition-colors ${landingEditorTab === 'features' ? 'bg-surface-container text-primary border-l-4 border-primary' : 'text-on-surface-variant hover:bg-surface-container-low'}`}
+                        >
                            <span className="material-symbols-outlined text-[18px]">list_alt</span> Lo que incluye (Features)
                         </div>
                      </div>
                   </div>
 
                   <div className="lg:col-span-2 flex flex-col gap-8">
-                     <div className="border border-outline-variant/20 bg-surface-container-lowest rounded-3xl p-8 shadow-sm">
+                     
+                     {landingEditorTab === 'visual' && (
+                     <div className="border border-outline-variant/20 bg-surface-container-lowest rounded-3xl p-8 shadow-sm animate-in fade-in duration-300">
                         <h3 className="font-bold text-xl text-on-surface mb-2">Elementos Visuales</h3>
                         <p className="text-sm text-on-surface-variant font-medium mb-8">Las imágenes que impactan a tus visitantes al aterrizar en tu página.</p>
                         
@@ -603,12 +626,12 @@ export default function CreatorStudioPage() {
                                  </p>
                               </div>
                            </div>
-
-                           {/* Duplicate Avatar settings removed, it scales from creator identity automatically */}
                         </div>
                      </div>
+                     )}
                      
-                     <div className="border border-outline-variant/20 bg-surface-container-lowest rounded-3xl p-8 shadow-sm">
+                     {landingEditorTab === 'copy' && (
+                     <div className="border border-outline-variant/20 bg-surface-container-lowest rounded-3xl p-8 shadow-sm animate-in fade-in duration-300">
                         <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4 mb-2">
                            <h3 className="font-bold text-xl text-on-surface">Textos (Copywriting)</h3>
                            <button onClick={saveCommunityInfo} disabled={savingCommunity || !selectedCommunityId} className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-lg hover:bg-primary-container active:scale-95 transition-all w-full md:w-auto flex items-center justify-center gap-2">
@@ -639,6 +662,73 @@ export default function CreatorStudioPage() {
                            </div>
                         </div>
                      </div>
+                     )}
+
+                     {landingEditorTab === 'features' && (
+                     <div className="border border-outline-variant/20 bg-surface-container-lowest rounded-3xl p-8 shadow-sm animate-in fade-in duration-300 flex flex-col">
+                        <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4 mb-2">
+                           <h3 className="font-bold text-xl text-on-surface">Lo que incluye (Features)</h3>
+                           <button onClick={saveCommunityInfo} disabled={savingCommunity || !selectedCommunityId} className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl shadow-lg hover:bg-primary-container active:scale-95 transition-all w-full md:w-auto flex items-center justify-center gap-2">
+                              {savingCommunity ? <span className="material-symbols-outlined animate-spin text-[18px]">refresh</span> : "Guardar Cambios"}
+                           </button>
+                        </div>
+                        <p className="text-sm text-on-surface-variant font-medium mb-8">Añade los beneficios específicos que ofreces al unirse a tu ecosistema.</p>
+                        
+                        <div className="flex flex-col gap-4 mb-6">
+                           {communityInput.features.map((feat, i) => (
+                              <div key={i} className="flex gap-4 items-start bg-surface-container p-4 rounded-xl border border-outline-variant/10">
+                                 <span className="material-symbols-outlined text-primary mt-1">check_circle</span>
+                                 <div className="flex-1 flex flex-col gap-2">
+                                    <input 
+                                       type="text" 
+                                       value={feat.title}
+                                       placeholder="Título del beneficio (ej: Chat Privado)"
+                                       onChange={e => {
+                                          const newF = [...communityInput.features];
+                                          newF[i].title = e.target.value;
+                                          setCommunityInput({...communityInput, features: newF});
+                                       }}
+                                       className="w-full bg-transparent border-b border-outline-variant/20 focus:border-primary px-1 py-1 text-on-surface font-bold outline-none transition-colors shadow-none text-sm"
+                                    />
+                                    <textarea 
+                                       rows={2}
+                                       value={feat.desc}
+                                       placeholder="Descripción breve..."
+                                       onChange={e => {
+                                          const newF = [...communityInput.features];
+                                          newF[i].desc = e.target.value;
+                                          setCommunityInput({...communityInput, features: newF});
+                                       }}
+                                       className="w-full bg-transparent border-b border-outline-variant/20 focus:border-primary px-1 py-1 text-on-surface font-medium outline-none transition-colors shadow-none text-xs resize-none"
+                                    ></textarea>
+                                 </div>
+                                 <button 
+                                    onClick={() => {
+                                       const newF = communityInput.features.filter((_, idx) => idx !== i);
+                                       setCommunityInput({...communityInput, features: newF});
+                                    }}
+                                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors self-center"
+                                 >
+                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                 </button>
+                              </div>
+                           ))}
+                           
+                           {communityInput.features.length === 0 && (
+                              <div className="text-center py-6 text-on-surface-variant bg-surface-container-high rounded-xl text-sm border border-dashed border-outline-variant/30">
+                                 No tienes features configurados. Añade el primero.
+                              </div>
+                           )}
+                        </div>
+
+                        <button 
+                           onClick={() => setCommunityInput({...communityInput, features: [...communityInput.features, {title: '', desc: ''}]})}
+                           className="w-full py-3 border-2 border-dashed border-primary text-primary hover:bg-primary/5 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm outline-none"
+                        >
+                           <span className="material-symbols-outlined text-[18px]">add_circle</span> Añadir nuevo beneficio
+                        </button>
+                     </div>
+                     )}
                   </div>
                </div>
              </div>
