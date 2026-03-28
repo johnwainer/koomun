@@ -451,129 +451,79 @@ export default function CreatorStudioPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                      
-                     {/* Activa 1 */}
-                     <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col h-full relative">
-                        <div className="h-48 bg-surface-container-high relative border-b border-outline-variant/10">
-                           <img
-                             alt="SaaS Builders"
-                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                             src="https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif"
-                           />
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                           <span className="absolute top-4 right-4 bg-green-500 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-lg">Publicada</span>
-                           
-                           {/* Avatar overlapping fixed - using universal creator identity */}
-                           <div className="absolute -bottom-8 left-6 z-20 w-16 h-16 rounded-full border-4 border-surface-container-lowest bg-surface-container overflow-hidden shadow-lg">
-                              <img src="https://i.pravatar.cc/150?u=creator1_global" alt="Tu Avatar" className="w-full h-full object-cover" />
-                           </div>
-                        </div>
-                        
-                        <div className="p-6 pt-10 flex flex-col flex-1 relative z-10 bg-surface-container-lowest">
-                           <h3 className="font-extrabold text-xl text-on-surface mb-2 leading-tight">SaaS Builders Elite</h3>
-                           <p className="text-on-surface-variant text-sm mb-6 flex-1">
-                             De idea a $10k MRR. Construyendo software de forma transparente y colaborativa.
-                           </p>
-                           
-                           <div className="flex items-center justify-between mb-6 pb-6 border-b border-outline-variant/10">
-                              <div className="flex items-center gap-2 text-on-surface-variant">
-                                 <span className="material-symbols-outlined text-[18px]">group</span>
-                                 <span className="text-sm font-bold">2.4k</span>
-                              </div>
-                              <span className="text-sm font-black text-amber-600 bg-amber-500/10 px-2 py-1 rounded">
-                                 $29/mes
-                              </span>
-                           </div>
-
-                           <div className="grid grid-cols-2 gap-3 mt-auto">
-                              <Link href="/create" className="w-full">
-                                 <button className="w-full py-2.5 bg-surface-container-high hover:bg-surface-container-highest flex justify-center text-on-surface text-xs font-bold rounded-xl transition-colors">
-                                    Editar Info
-                                 </button>
-                              </Link>
-                              <button 
-                                 onClick={() => setActiveTab("audiencia")}
-                                 className="w-full py-2.5 bg-primary text-white hover:bg-primary-container flex justify-center text-xs font-bold rounded-xl transition-colors shadow-md shadow-primary/20"
-                              >
-                                 Gestionar
+                     {myCommunities.length === 0 ? (
+                        <div className="col-span-full py-12 flex flex-col items-center justify-center text-center">
+                           <span className="material-symbols-outlined text-4xl text-outline-variant mb-4">disabled_by_default</span>
+                           <h3 className="text-lg font-bold text-on-surface mb-2">No tienes comunidades creadas</h3>
+                           <p className="text-on-surface-variant text-sm mb-6">Empieza a construir tu tribu y diseña tu conocimiento.</p>
+                           <Link href="/create">
+                              <button className="px-6 py-3 bg-primary text-white font-extrabold rounded-full hover:bg-primary-container shadow-lg shadow-primary/20 active:scale-95 transition-all text-sm">
+                                 Crear mi primera comunidad
                               </button>
-                           </div>
+                           </Link>
                         </div>
-                     </div>
-
-                     {/* Activa 2 */}
-                     <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col h-full relative">
-                        <div className="h-48 bg-surface-container-high relative border-b border-outline-variant/10">
-                           <img
-                             alt="UI Hackers"
-                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                             src="https://media.giphy.com/media/l41lFw057lAJQMwg0/giphy.gif"
-                           />
-                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                           <span className="absolute top-4 right-4 bg-green-500 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-lg">Publicada</span>
-                           
-                           <div className="absolute -bottom-8 left-6 z-20 w-16 h-16 rounded-full border-4 border-surface-container-lowest bg-surface-container overflow-hidden shadow-lg">
-                              <img src="https://i.pravatar.cc/150?u=creator1_global" alt="Tu Avatar" className="w-full h-full object-cover" />
-                           </div>
-                        </div>
-                        
-                        <div className="p-6 pt-10 flex flex-col flex-1 relative z-10 bg-surface-container-lowest">
-                           <h3 className="font-extrabold text-xl text-on-surface mb-2 leading-tight">UI Design Hackers</h3>
-                           <p className="text-on-surface-variant text-sm mb-6 flex-1">
-                             Aprende sistemas de diseño, variables y masteriza Figma con profesionales.
-                           </p>
-                           
-                           <div className="flex items-center justify-between mb-6 pb-6 border-b border-outline-variant/10">
-                              <div className="flex items-center gap-2 text-on-surface-variant">
-                                 <span className="material-symbols-outlined text-[18px]">group</span>
-                                 <span className="text-sm font-bold">12k</span>
+                     ) : (
+                        myCommunities.map((comm) => (
+                           <div key={comm.id} className={`bg-surface-container-lowest border border-outline-variant/15 rounded-3xl overflow-hidden shadow-sm flex flex-col h-full relative transition-all duration-300 ${comm.is_published ? 'hover:shadow-xl hover:-translate-y-1 group' : 'opacity-70 hover:opacity-100'}`}>
+                              <div className="h-48 bg-surface-container-high relative border-b border-outline-variant/10 flex items-center justify-center overflow-hidden">
+                                 {comm.cover_image_url ? (
+                                    <img
+                                       alt={comm.title}
+                                       className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 ${comm.is_published ? 'group-hover:scale-105' : ''}`}
+                                       src={comm.cover_image_url}
+                                    />
+                                 ) : (
+                                    <span className="material-symbols-outlined text-5xl text-outline-variant">image_not_supported</span>
+                                 )}
+                                 {comm.cover_image_url && <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>}
+                                 
+                                 <span className={`absolute top-4 right-4 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-lg ${comm.is_published ? 'bg-green-500' : 'bg-outline-variant'}`}>
+                                    {comm.is_published ? 'Publicada' : 'Borrador'}
+                                 </span>
+                                 
+                                 <div className="absolute -bottom-8 left-6 z-20 w-16 h-16 rounded-full border-4 border-surface-container-lowest bg-surface-container flex items-center justify-center overflow-hidden shadow-lg">
+                                    {profileInput.avatar_url ? (
+                                       <img src={profileInput.avatar_url} alt="Tu Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                       <span className="text-xl font-bold uppercase">{profileInput.full_name?.charAt(0) || "C"}</span>
+                                    )}
+                                 </div>
                               </div>
-                              <span className="text-sm font-black text-green-600 bg-green-500/10 px-2 py-1 rounded">
-                                 Gratis
-                              </span>
-                           </div>
+                              
+                              <div className="p-6 pt-10 flex flex-col flex-1 relative z-10 bg-surface-container-lowest">
+                                 <h3 className="font-extrabold text-xl text-on-surface mb-2 leading-tight">{comm.title || 'Sin Título'}</h3>
+                                 <p className="text-on-surface-variant text-sm mb-6 flex-1">
+                                    {comm.description || '(Sin descripción editada todavía)'}
+                                 </p>
+                                 
+                                 <div className="flex items-center justify-between mb-6 pb-6 border-b border-outline-variant/10">
+                                    <div className="flex items-center gap-2 text-on-surface-variant">
+                                       <span className="material-symbols-outlined text-[18px]">group</span>
+                                       <span className="text-sm font-bold">0</span>
+                                    </div>
+                                    <span className={`text-sm font-black px-2 py-1 rounded ${comm.price_tier === 'Gratis' ? 'text-green-600 bg-green-500/10' : 'text-amber-600 bg-amber-500/10'}`}>
+                                       {comm.price_tier || 'Gratis'}
+                                    </span>
+                                 </div>
 
-                           <div className="grid grid-cols-2 gap-3 mt-auto">
-                              <Link href="/create" className="w-full">
-                                 <button className="w-full py-2.5 bg-surface-container-high hover:bg-surface-container-highest flex justify-center text-on-surface text-xs font-bold rounded-xl transition-colors">
-                                    Editar Info
-                                 </button>
-                              </Link>
-                              <button 
-                                 onClick={() => setActiveTab("audiencia")}
-                                 className="w-full py-2.5 bg-primary text-white hover:bg-primary-container flex justify-center text-xs font-bold rounded-xl transition-colors shadow-md shadow-primary/20"
-                              >
-                                 Gestionar
-                              </button>
+                                 <div className="grid grid-cols-2 gap-3 mt-auto">
+                                    <button 
+                                       onClick={() => { loadCommunityInfo(comm.id); setActiveTab("landing"); }}
+                                       className="w-full py-2.5 bg-surface-container-high hover:bg-surface-container-highest flex justify-center text-on-surface text-xs font-bold rounded-xl transition-colors"
+                                    >
+                                       Modificar Info
+                                    </button>
+                                    <button 
+                                       onClick={() => setActiveTab("audiencia")}
+                                       className="w-full py-2.5 bg-primary text-white hover:bg-primary-container flex justify-center text-xs font-bold rounded-xl transition-colors shadow-md shadow-primary/20"
+                                    >
+                                       Gestionar
+                                    </button>
+                                 </div>
+                              </div>
                            </div>
-                        </div>
-                     </div>
-
-                     {/* Draft */}
-                     <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-3xl overflow-hidden shadow-sm flex flex-col h-full relative opacity-60 hover:opacity-100 transition-opacity">
-                        <div className="h-48 bg-surface-container-high flex items-center justify-center relative border-b border-outline-variant/10">
-                           <span className="material-symbols-outlined text-5xl text-outline-variant">image_not_supported</span>
-                           <span className="absolute top-4 right-4 bg-outline-variant text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded">Borrador</span>
-                           
-                           <div className="absolute -bottom-8 left-6 z-20 w-16 h-16 rounded-full border-4 border-surface-container-lowest bg-surface-container overflow-hidden shadow-lg">
-                              <img src="https://i.pravatar.cc/150?u=creator1_global" alt="Tu Avatar" className="w-full h-full object-cover" />
-                           </div>
-                        </div>
-                        
-                        <div className="p-6 pt-10 flex flex-col flex-1 relative z-10 bg-surface-container-lowest">
-                           <h3 className="font-extrabold text-xl text-on-surface mb-2 leading-tight">Marketing de AI</h3>
-                           <p className="text-on-surface-variant text-sm mb-6 flex-1">
-                             (Configuración pendiente de precios y material educativo).
-                           </p>
-                           
-                           <div className="grid grid-cols-1 gap-3 mt-auto">
-                              <Link href="/create" className="w-full">
-                                 <button className="w-full py-3 bg-surface-container-highest hover:bg-outline-variant/20 flex justify-center text-on-surface text-sm font-bold rounded-xl transition-colors">
-                                    Continuar Edición
-                                 </button>
-                              </Link>
-                           </div>
-                        </div>
-                     </div>
+                        ))
+                     )}
 
                   </div>
                </section>
@@ -654,22 +604,7 @@ export default function CreatorStudioPage() {
                               </div>
                            </div>
 
-                           <div>
-                              <label className="block text-sm font-bold text-on-surface mb-3">Avatar del Creador</label>
-                              <div className="flex items-center gap-6">
-                                 <div className="w-24 h-24 rounded-full border-2 border-outline-variant/20 flex items-center justify-center bg-surface overflow-hidden shrink-0 relative z-10">
-                                    <img src="https://i.pravatar.cc/150?u=creator" alt="Creator Avatar" className="w-full h-full object-cover" />
-                                 </div>
-                                 <div className="flex flex-wrap gap-2">
-                                    <button className="px-5 py-2 border border-outline-variant/30 rounded-xl text-sm font-bold hover:bg-surface-container transition-colors text-on-surface flex items-center gap-2">
-                                       <span className="material-symbols-outlined text-[16px]">change_circle</span> Cambiar Avatar
-                                    </button>
-                                    <button className="px-5 py-2 text-red-500 rounded-xl text-sm font-bold hover:bg-red-500/10 transition-colors flex items-center gap-2">
-                                       <span className="material-symbols-outlined text-[16px]">delete</span>
-                                    </button>
-                                 </div>
-                              </div>
-                           </div>
+                           {/* Duplicate Avatar settings removed, it scales from creator identity automatically */}
                         </div>
                      </div>
                      
