@@ -282,11 +282,21 @@ export default function CreatorStudioPage() {
     setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count - 1 } : m));
   };
 
+  const toggleItemActive = async (id: string, current: boolean) => {
+    await supabaseClient.from('content_items').update({ is_active: !current }).eq('id', id);
+    setContentItems(contentItems.map(item => item.id === id ? { ...item, is_active: !current } : item));
+  };
+  
   const deleteModule = async (id: string) => {
-    if (!confirm("¿Eliminar este módulo enteramente con su contenido?")) return;
+    if(!confirm("¿Seguro que quieres eliminar este módulo y todo su contenido?")) return;
     await supabaseClient.from('content_modules').delete().eq('id', id);
-    setModuleNames(prev => prev.filter(m => m.id !== id));
-    if (activeModuleId === id) setActiveModuleId(null);
+    setModuleNames(moduleNames.filter(m => m.id !== id));
+    if (activeModuleId === id) setActiveModuleId(moduleNames[0]?.id || null);
+  };
+  
+  const toggleModuleActive = async (id: string, current: boolean) => {
+    await supabaseClient.from('content_modules').update({ is_active: !current }).eq('id', id);
+    setModuleNames(moduleNames.map(m => m.id === id ? { ...m, is_active: !current } : m));
   };
 
   const onDragStart = (e: React.DragEvent, idx: number) => {
@@ -331,16 +341,19 @@ export default function CreatorStudioPage() {
         }
         const { data } = await supabaseClient
            .from('content_modules')
-           .select('id, title, order_index, content_items(count)')
+           .select('id, title, description, cover_image_url, order_index, is_active, created_at, content_items(count)')
            .eq('community_id', selectedCommunityId)
-           .order('order_index', { ascending: true });
+           .order('created_at', { ascending: false });
            
         if (data) {
            const mapped = data.map((m: any) => ({
               id: m.id,
               name: m.title,
               count: m.content_items[0]?.count || 0,
-              order_index: m.order_index
+              order_index: m.order_index,
+              is_active: m.is_active !== false,
+              description: m.description,
+              cover_image_url: m.cover_image_url
            }));
            setModuleNames(mapped);
            if (mapped.length > 0 && (!activeModuleId || !mapped.find((x: any) => x.id === activeModuleId))) {
@@ -368,14 +381,15 @@ export default function CreatorStudioPage() {
            setContentItems(data.map((item: any) => ({
               id: item.id,
               title: item.title,
-              type: item.type === 'video' ? 'VIDEO' : 'PDF',
+              type: item.type,
               platform: item.platform,
-              time: item.duration_string || 'N/A',
+              url: item.video_url || item.media_url,
+              duration: item.duration_string || 'N/A',
               date: new Date(item.created_at).toLocaleDateString(),
               access: item.access_level,
               secure: item.is_secure,
               order_index: item.order_index,
-              url: item.video_url || item.media_url
+              is_active: item.is_active !== false
            })));
         }
      }
@@ -385,6 +399,7 @@ export default function CreatorStudioPage() {
 
   // Modals
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+  const [editModuleId, setEditModuleId] = useState<string | null>(null);
   const [moduleInputName, setModuleInputName] = useState("");
   const [moduleInputDesc, setModuleInputDesc] = useState("");
   const [moduleImageUrl, setModuleImageUrl] = useState("");
@@ -414,6 +429,7 @@ export default function CreatorStudioPage() {
   };
 
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
+  const [editMaterialId, setEditMaterialId] = useState<string | null>(null);
   const [materialInput, setMaterialInput] = useState({ title: "", type: "VIDEO", platform: "youtube", access: "Muestra Gratis", description: "", price: "", video_url: "", media_url: "" });
   const [uploadingMaterialFile, setUploadingMaterialFile] = useState(false);
   
@@ -446,24 +462,34 @@ export default function CreatorStudioPage() {
        return;
     }
     
-    const { data, error } = await supabaseClient.from('content_modules').insert({
-       community_id: selectedCommunityId,
-       title: moduleInputName,
-       description: moduleInputDesc,
-       cover_image_url: moduleImageUrl,
-       order_index: moduleNames.length
-    }).select().single();
-    
-    if (data && !error) {
-       setModuleNames([...moduleNames, { id: data.id, name: data.title, count: 0 }]);
-       setActiveModuleId(data.id);
-       setModuleInputName("");
-       setModuleInputDesc("");
-       setModuleImageUrl("");
-       setIsModuleModalOpen(false);
+    if (editModuleId) {
+       const { error } = await supabaseClient.from('content_modules').update({
+          title: moduleInputName,
+          description: moduleInputDesc,
+          cover_image_url: moduleImageUrl
+       }).eq('id', editModuleId);
+       if (!error) {
+          setModuleNames(moduleNames.map(m => m.id === editModuleId ? { ...m, name: moduleInputName, description: moduleInputDesc, cover_image_url: moduleImageUrl } : m));
+       } else alert("Error al editar módulo");
     } else {
-       alert("Error creating module: " + (error?.message || 'Unknown error'));
+       const { data, error } = await supabaseClient.from('content_modules').insert({
+          community_id: selectedCommunityId,
+          title: moduleInputName,
+          description: moduleInputDesc,
+          cover_image_url: moduleImageUrl,
+          order_index: moduleNames.length
+       }).select().single();
+       if (data && !error) {
+          setModuleNames([{ id: data.id, name: data.title, count: 0, is_active: data.is_active, description: data.description, cover_image_url: data.cover_image_url }, ...moduleNames]);
+          setActiveModuleId(data.id);
+       } else alert("Error creating module");
     }
+    
+    setModuleInputName("");
+    setModuleInputDesc("");
+    setModuleImageUrl("");
+    setEditModuleId(null);
+    setIsModuleModalOpen(false);
   };
 
   const handleCreateMaterial = async () => {
@@ -474,38 +500,56 @@ export default function CreatorStudioPage() {
        setShowUpgradeModal(true);
        return;
     }
-    if (materialInput.type === "NATIVE") return; 
-
-    const { data: insertedItem, error } = await supabaseClient.from('content_items').insert({
-       module_id: activeModuleId,
-       title: materialInput.title,
-       type: materialInput.type,
-       platform: materialInput.type === "PDF" ? null : materialInput.platform,
-       duration_string: materialInput.type === "PDF" ? "PDF Protegido" : "Video",
-       is_secure: materialInput.type === "PDF",
-       access_level: materialInput.access,
-       order_index: contentItems.length,
-       media_url: materialInput.type === 'PDF' ? materialInput.media_url : materialInput.video_url
-    }).select().single();
-
-    if (!error && insertedItem) {
-        const newItem = {
-          id: insertedItem.id,
-          title: insertedItem.title,
-          type: insertedItem.type === 'video' ? 'VIDEO' : 'PDF',
-          platform: insertedItem.platform,
-          time: insertedItem.duration_string,
-          date: new Date().toLocaleDateString(),
-          access: insertedItem.access_level,
-          secure: insertedItem.is_secure
-        };
-        setContentItems([...contentItems, newItem]);
-        setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count + 1 } : m));
-        setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Muestra Gratis", description: "", price: "", video_url: "", media_url: "" });
-        setIsMaterialModalOpen(false);
+    
+    if (editMaterialId) {
+       const { error } = await supabaseClient.from('content_items').update({
+          title: materialInput.title,
+          type: materialInput.type,
+          platform: materialInput.type === "PDF" ? null : materialInput.platform,
+          media_url: materialInput.type === "NATIVE" ? materialInput.media_url : materialInput.video_url,
+          access_level: materialInput.access
+       }).eq('id', editMaterialId);
+       if (!error) {
+          setContentItems(contentItems.map(item => item.id === editMaterialId ? {
+              ...item,
+              title: materialInput.title,
+              type: materialInput.type,
+              platform: materialInput.type === "PDF" ? null : materialInput.platform,
+              url: materialInput.type === "NATIVE" ? materialInput.media_url : materialInput.video_url,
+              access: materialInput.access
+          } : item));
+       } else alert("Error al editar lección");
     } else {
-        alert("Error creating material: " + (error?.message || 'Unknown error'));
+       const { data: insertedItem, error } = await supabaseClient.from('content_items').insert({
+          module_id: activeModuleId,
+          title: materialInput.title,
+          type: materialInput.type,
+          platform: materialInput.type === "PDF" ? null : materialInput.platform,
+          media_url: materialInput.type === "NATIVE" ? materialInput.media_url : materialInput.video_url,
+          access_level: materialInput.access,
+          order_index: contentItems.length
+       }).select().single();
+       if (insertedItem && !error) {
+          setContentItems([...contentItems, {
+             id: insertedItem.id,
+             title: insertedItem.title,
+             type: insertedItem.type,
+             platform: insertedItem.platform,
+             url: insertedItem.video_url || insertedItem.media_url,
+             duration: insertedItem.duration_string || 'N/A',
+             date: new Date(insertedItem.created_at).toLocaleDateString(),
+             access: insertedItem.access_level,
+             secure: insertedItem.is_secure,
+             order_index: insertedItem.order_index,
+             is_active: insertedItem.is_active !== false
+          }]);
+          setModuleNames(moduleNames.map(m => m.id === activeModuleId ? {...m, count: m.count + 1} : m));
+       } else alert("Error creating item");
     }
+    
+    setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Muestra Gratis", description: "", price: "", video_url: "", media_url: "" });
+    setEditMaterialId(null);
+    setIsMaterialModalOpen(false);
   };
 
   const hasPDFUploaded = contentItems.some((item: any) => item.type === "PDF");
@@ -1486,7 +1530,7 @@ export default function CreatorStudioPage() {
         {isModuleModalOpen && (
            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
               <div className="bg-surface-container-lowest w-full max-w-md rounded-3xl p-6 shadow-2xl border border-outline-variant/20">
-                 <h3 className="text-xl font-bold text-on-surface mb-2">Nuevo Módulo</h3>
+                  <h3 className="text-xl font-bold text-on-surface mb-2">{editModuleId ? "Editar Módulo" : "Nuevo Módulo"}</h3>
                  <p className="text-sm text-on-surface-variant mb-6">Agrupa tus lecciones en diferentes categorías (ej: Bienvenida, Semana 1, Conceptos base).</p>
                  
                  <label className="block text-xs font-bold text-on-surface mb-2">Nombre del Módulo</label>
@@ -1529,8 +1573,8 @@ export default function CreatorStudioPage() {
                  </div>
                  
                  <div className="flex justify-end gap-3">
-                    <button onClick={() => setIsModuleModalOpen(false)} className="px-5 py-2.5 font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors">Cancelar</button>
-                    <button onClick={handleCreateModule} className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-container shadow-md active:scale-95 transition-all">Crear Módulo</button>
+                    <button onClick={() => { setIsModuleModalOpen(false); setEditModuleId(null); setModuleInputName(""); setModuleInputDesc(""); setModuleImageUrl(""); }} className="px-5 py-2.5 font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors">Cancelar</button>
+                    <button onClick={handleCreateModule} className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-container shadow-md active:scale-95 transition-all">{editModuleId ? "Guardar Cambios" : "Crear Módulo"}</button>
                  </div>
               </div>
            </div>
@@ -1539,8 +1583,8 @@ export default function CreatorStudioPage() {
         {isMaterialModalOpen && (
            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 py-8 animate-in fade-in">
               <div className="bg-surface-container-lowest w-full max-w-2xl rounded-3xl p-8 shadow-2xl border border-outline-variant/20 max-h-full overflow-y-auto no-scrollbar">
-                 <h3 className="text-xl font-bold text-on-surface mb-2">Añadir Nuevo Material</h3>
-                 <p className="text-sm text-on-surface-variant mb-6">Sube un video o un PDF interactivo para el módulo <strong className="text-primary">{moduleNames.find(m => m.id === activeModuleId)?.name || "Seleccionado"}</strong>.</p>
+                 <h3 className="text-xl font-bold text-on-surface mb-2">{editMaterialId ? "Editar Material" : "Añadir Nuevo Material"}</h3>
+                 <p className="text-sm text-on-surface-variant mb-6">Sube un video o un PDF interactivo para el módulo <strong className="text-primary">{moduleNames.find((m: any) => m.id === activeModuleId)?.name || "Seleccionado"}</strong>.</p>
                  
                  <div className="flex flex-col gap-5">
                     <div>
@@ -1712,14 +1756,14 @@ export default function CreatorStudioPage() {
                     </div>
                  </div>
                  
-                 <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-outline-variant/10">
-                    <button onClick={() => setIsMaterialModalOpen(false)} className="px-5 py-2.5 font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors">Cancelar</button>
+                 <div className="pt-4 border-t border-outline-variant/10 flex justify-end gap-3">
+                    <button onClick={() => { setIsMaterialModalOpen(false); setEditMaterialId(null); setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Muestra Gratis", description: "", price: "", video_url: "", media_url: "" }); }} className="px-5 py-2.5 font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors">Cancelar</button>
                     <button 
                        onClick={handleCreateMaterial} 
                        disabled={materialInput.type === "NATIVE" || (materialInput.type === "PDF" && hasPDFUploaded) || uploadingMaterialFile || (materialInput.type === 'VIDEO' && !materialInput.video_url) || (materialInput.type === 'PDF' && !materialInput.media_url)}
                        className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-container disabled:opacity-50 disabled:cursor-not-allowed shadow-md active:scale-95 transition-all flex items-center gap-2"
                     >
-                       <span className="material-symbols-outlined text-[16px]">cloud_upload</span> Cargar a Módulo
+                       <span className="material-symbols-outlined text-[16px]">cloud_upload</span> {editMaterialId ? "Guardar Cambios" : "Cargar a Módulo"}
                     </button>
                  </div>
               </div>

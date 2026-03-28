@@ -25,7 +25,8 @@ export async function GET(req: Request) {
       .from('content_modules')
       .select('id, title, order_index, description, cover_image_url')
       .eq('community_id', communityId)
-      .order('order_index', { ascending: true });
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     
@@ -37,7 +38,9 @@ export async function GET(req: Request) {
         const { data: items } = await supabaseClient
           .from('content_items')
           .select('id, module_id, type, title, platform, media_url, duration_string, is_secure, access_level')
-          .in('module_id', moduleIds);
+          .in('module_id', moduleIds)
+          .eq('is_active', true)
+          .order('order_index', { ascending: true });
           
         if (items) {
            items.forEach(item => {

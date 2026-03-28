@@ -114,6 +114,7 @@ CREATE TABLE public.content_modules (
   description TEXT,
   cover_image_url TEXT,
   order_index INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -128,6 +129,7 @@ CREATE TABLE public.content_items (
   is_secure BOOLEAN DEFAULT FALSE,
   access_level TEXT DEFAULT 'Muestra Gratis' CHECK (access_level IN ('Muestra Gratis', 'Premium', 'Pago Especial')),
   order_index INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
