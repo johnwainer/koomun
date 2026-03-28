@@ -1,27 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import TopNavBar from "@/components/TopNavBar";
 import SideNavBar from "@/components/SideNavBar";
 import BottomNavBar from "@/components/BottomNavBar";
+import { supabaseClient } from "@/lib/supabase";
 
 export default function CreateCommunityPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     description: "",
-    category: "Negocios",
+    category: "",
     pricing: "free",
     price: "",
+    cover_image_url: ""
   });
+
+  useEffect(() => {
+     async function fetchCats() {
+        const { data } = await supabaseClient.from('categories').select('id, name').order('name');
+        if (data && data.length > 0) {
+           setCategories(data);
+           setFormData(prev => ({...prev, category: data[0].name}));
+        }
+     }
+     fetchCats();
+  }, []);
 
   const nextStep = () => setStep((s) => Math.min(s + 1, 3));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+  
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const form = new FormData();
+      form.append('file', file);
+
+      const res = await fetch('/api/private/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session?.access_token}` },
+        body: form
+      });
+      if (!res.ok) return;
+      
+      const { url } = await res.json();
+      setFormData(prev => ({ ...prev, cover_image_url: url }));
+    } catch (err: any) {
+      alert("Error subiendo imagen: " + err.message);
+    }
+  };
+
+  const handleCreate = async () => {
+     setCreating(true);
+     try {
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       if (!session) {
+           router.push('/login');
+           return;
+       }
+       
+       const tier = formData.pricing === 'paid' ? `Premium` : `Gratis`;
+       const catObj = categories.find(c => c.name === formData.category);
+
+       const { data, error } = await supabaseClient.from('communities').insert({
+          creator_id: session.user.id,
+          category_id: catObj?.id || null,
+          title: formData.name,
+          description: formData.description,
+          price_tier: tier,
+          cover_image_url: formData.cover_image_url,
+          is_published: false // created as draft
+       }).select().single();
+       
+       if (error) throw error;
+       router.push('/studio');
+     } catch (error: any) {
+       alert("Error creando comunidad: " + error.message);
+     } finally {
+       setCreating(false);
+     }
   };
 
   return (
@@ -110,21 +181,10 @@ export default function CreateCommunityPage() {
                       onChange={handleChange}
                       className="w-full bg-surface-container-high border-2 border-outline-variant/20 focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors appearance-none cursor-pointer"
                     >
-                      <option>Negocios</option>
-                      <option>Tecnología y Programación</option>
-                      <option>Cripto y Web3</option>
-                      <option>Arte y Diseño Visual</option>
-                      <option>Marketing y Crecimiento</option>
-                      <option>Salud y Fitness</option>
-                      <option>Desarrollo Personal</option>
-                      <option>Finanzas e Inversiones</option>
-                      <option>Música y Audio</option>
-                      <option>Fotografía y Video</option>
-                      <option>Deportes y E-Sports</option>
-                      <option>Derecho y Leyes</option>
-                      <option>Gastronomía</option>
-                      <option>Idiomas</option>
-                      <option>Viajes y Estilo de Vida</option>
+                      <option value="">Selecciona una categoría</option>
+                      {categories.map(c => (
+                         <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -139,9 +199,20 @@ export default function CreateCommunityPage() {
                 <div className="flex flex-col gap-8">
                   <div>
                     <label className="block text-sm font-bold text-on-surface mb-2">Sube una Portada (Opcional)</label>
-                    <div className="w-full h-40 border-2 border-dashed border-outline-variant/50 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 hover:border-primary transition-all cursor-pointer group">
-                       <span className="material-symbols-outlined text-4xl mb-2 group-hover:text-primary transition-colors">cloud_upload</span>
-                       <span className="text-sm font-medium">Arrastra una imagen o haz clic para subir</span>
+                    <div className="w-full h-40 border-2 border-dashed border-outline-variant/50 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 hover:border-primary transition-all cursor-pointer group relative overflow-hidden bg-surface-container">
+                       <input type="file" accept="image/*" onChange={handleUploadImage} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" />
+                       {formData.cover_image_url ? (
+                          <>
+                             <img src={formData.cover_image_url} alt="Cover Preview" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                          </>
+                       ) : null}
+                       <span className={`material-symbols-outlined text-4xl mb-2 transition-colors z-10 ${formData.cover_image_url ? 'text-white' : 'group-hover:text-primary text-outline-variant'}`}>
+                          cloud_upload
+                       </span>
+                       <span className={`text-sm font-bold z-10 px-2 text-center ${formData.cover_image_url ? 'text-white' : ''}`}>
+                          {formData.cover_image_url ? 'Click para reemplazar portada' : 'Arrastra una imagen o haz clic para subir'}
+                       </span>
                     </div>
                   </div>
 
@@ -231,12 +302,14 @@ export default function CreateCommunityPage() {
                    Continuar
                  </button>
               ) : (
-                 <Link href="/studio">
-                   <button className="px-8 py-3 bg-on-surface text-surface font-extrabold rounded-full hover:opacity-90 shadow-xl active:scale-95 transition-all text-sm flex items-center gap-2">
-                     Crear Imperio
-                     <span className="material-symbols-outlined text-sm">rocket_launch</span>
+                   <button 
+                     onClick={handleCreate}
+                     disabled={creating}
+                     className="px-8 py-3 bg-on-surface text-surface font-extrabold rounded-full hover:opacity-90 shadow-xl active:scale-95 transition-all text-sm flex items-center gap-2 outline-none"
+                   >
+                     {creating ? "Creando..." : "Crear Imperio"}
+                     {!creating && <span className="material-symbols-outlined text-sm">rocket_launch</span>}
                    </button>
-                 </Link>
               )}
             </div>
             

@@ -183,6 +183,23 @@ export default function CreatorStudioPage() {
       setSavingCommunity(false);
   };
 
+  const handlePublishToggle = async (commId: string, currentStatus: boolean) => {
+     try {
+        const { error } = await supabaseClient
+           .from('communities')
+           .update({ is_published: !currentStatus })
+           .eq('id', commId);
+
+        if (error) throw error;
+        
+        setMyCommunities(prev => prev.map(c => 
+           c.id === commId ? { ...c, is_published: !currentStatus } : c
+        ));
+     } catch(e: any) {
+        alert("Error cambiando estado: " + e.message);
+     }
+  };
+
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   
@@ -457,9 +474,16 @@ export default function CreatorStudioPage() {
                </section>
 
                <section>
-                  <h2 className="text-xl font-bold text-on-surface mb-6 flex items-center gap-2">
-                     Inventario de Comunidades
-                  </h2>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                     <h2 className="text-xl font-bold text-on-surface flex items-center gap-2">
+                        Inventario de Comunidades
+                     </h2>
+                     <Link href="/create">
+                        <button className="px-6 py-2.5 bg-primary text-white font-extrabold rounded-xl hover:bg-primary-container shadow-md shadow-primary/20 active:scale-95 transition-all text-sm flex items-center gap-2">
+                           <span className="material-symbols-outlined text-sm">add</span> Nueva Comunidad
+                        </button>
+                     </Link>
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                      
@@ -489,9 +513,13 @@ export default function CreatorStudioPage() {
                                  )}
                                  {comm.cover_image_url && <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>}
                                  
-                                 <span className={`absolute top-4 right-4 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-lg ${comm.is_published ? 'bg-green-500' : 'bg-outline-variant'}`}>
+                                 <button 
+                                    onClick={() => handlePublishToggle(comm.id, comm.is_published)}
+                                    className={`absolute top-4 right-4 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-1 active:scale-95 transition-all outline-none ${comm.is_published ? 'bg-green-500 hover:bg-green-600' : 'bg-outline-variant hover:bg-on-surface-variant'}`}
+                                 >
+                                    <span className="material-symbols-outlined text-[14px]">{(comm as any).is_published ? 'public' : 'visibility_off'}</span>
                                     {comm.is_published ? 'Publicada' : 'Borrador'}
-                                 </span>
+                                 </button>
                                  
                                  <div className="absolute -bottom-8 left-6 z-20 w-16 h-16 rounded-full border-4 border-surface-container-lowest bg-surface-container flex items-center justify-center overflow-hidden shadow-lg">
                                     {profileInput.avatar_url ? (
