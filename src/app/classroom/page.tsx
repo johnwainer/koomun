@@ -60,6 +60,8 @@ function ClassroomPageContent() {
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessState, setAccessState] = useState<"pending" | "success" | "unauthorized" | "empty">("pending");
+  const [myAvatar, setMyAvatar] = useState("");
+  const [myName, setMyName] = useState("");
 
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [savedCards, setSavedCards] = useState<{last4: string; brand: string}[]>([{ last4: '4242', brand: 'Visa' }]);
@@ -129,6 +131,12 @@ function ClassroomPageContent() {
       setLoading(true);
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user) {
+           setMyName(session.user.user_metadata?.full_name || session.user.email || "Usuario");
+           if (session.user.user_metadata?.avatar_url) {
+              setMyAvatar(session.user.user_metadata.avatar_url);
+           }
+        }
         const res = await fetch(`/api/private/library?communityId=${activeCommunity.id}`, {
            headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
         });
@@ -142,7 +150,7 @@ function ClassroomPageContent() {
              id: mod.id,
              title: mod.title,
              description: mod.description || 'Sin descripción',
-             image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=800",
+             image: mod.cover_image_url || "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&q=80&w=800",
              progress: 0,
              author: activeCommunity.name,
              items: mod.items
@@ -464,19 +472,27 @@ function ClassroomPageContent() {
                      <div className="flex flex-col gap-6 mb-8">
                         {commentsList.map((c, i) => (
                            <div key={i} className="flex gap-4">
-                              <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
-                                <img src="https://i.pravatar.cc/150?u=any" alt="Avatar" />
+                              <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0 flex items-center justify-center font-bold text-on-surface-variant">
+                                {myAvatar ? (
+                                  <img src={myAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                  (myName[0] || 'U').toUpperCase()
+                                )}
                               </div>
                               <div className="flex-1">
-                                <span className="text-xs font-bold text-on-surface-variant mb-1 block">{c.user}</span>
+                                <span className="text-xs font-bold text-on-surface-variant mb-1 block">{myName}</span>
                                 <p className="text-sm text-on-surface p-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl rounded-tl-none">{c.text}</p>
                               </div>
                            </div>
                         ))}
                      </div>
                      <div className="flex gap-4">
-                        <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
-                          <img src="https://i.pravatar.cc/150?u=current_user" alt="Me" />
+                        <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0 flex items-center justify-center font-bold text-on-surface-variant">
+                          {myAvatar ? (
+                            <img src={myAvatar} alt="Me" className="w-full h-full object-cover" />
+                          ) : (
+                            (myName[0] || 'U').toUpperCase()
+                          )}
                         </div>
                         <div className="flex-1 flex flex-col gap-3">
                           <textarea 

@@ -386,6 +386,31 @@ export default function CreatorStudioPage() {
   // Modals
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
   const [moduleInputName, setModuleInputName] = useState("");
+  const [moduleImageUrl, setModuleImageUrl] = useState("");
+  const [uploadingModuleImage, setUploadingModuleImage] = useState(false);
+
+  const handleUploadModuleImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     if (!file) return;
+     setUploadingModuleImage(true);
+     try {
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       const formData = new FormData();
+       formData.append('file', file);
+       const res = await fetch('/api/private/upload', {
+         method: 'POST',
+         headers: { 'Authorization': `Bearer ${session?.access_token}` },
+         body: formData
+       });
+       if (!res.ok) throw new Error("Upload failed");
+       const { url } = await res.json();
+       setModuleImageUrl(url);
+     } catch (err: any) {
+       alert("Error subiendo imagen: " + err.message);
+     } finally {
+       setUploadingModuleImage(false);
+     }
+  };
 
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [materialInput, setMaterialInput] = useState({ title: "", type: "VIDEO", platform: "youtube", access: "Muestra Gratis", description: "", price: "", video_url: "", media_url: "" });
@@ -420,6 +445,7 @@ export default function CreatorStudioPage() {
     const { data, error } = await supabaseClient.from('content_modules').insert({
        community_id: selectedCommunityId,
        title: moduleInputName,
+       cover_image_url: moduleImageUrl || null,
        order_index: moduleNames.length
     }).select().single();
     
@@ -427,6 +453,7 @@ export default function CreatorStudioPage() {
        setModuleNames([...moduleNames, { id: data.id, name: data.title, count: 0 }]);
        setActiveModuleId(data.id);
        setModuleInputName("");
+       setModuleImageUrl("");
        setIsModuleModalOpen(false);
     } else {
        alert("Error creating module: " + (error?.message || 'Unknown error'));
@@ -1464,6 +1491,26 @@ export default function CreatorStudioPage() {
                     className="w-full bg-surface-container-high border-2 border-outline-variant/20 focus:border-primary rounded-xl px-4 py-3 text-on-surface outline-none transition-colors mb-6"
                     autoFocus
                  />
+
+                 <div className="mb-6">
+                    <label className="block text-xs font-bold text-on-surface mb-2">Imagen de Portada del Módulo (Opcional)</label>
+                    {moduleImageUrl ? (
+                       <div className="relative w-full h-32 rounded-xl overflow-hidden border border-outline-variant/20 group">
+                          <img src={moduleImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                          <button onClick={() => setModuleImageUrl("")} className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                             <span className="material-symbols-outlined">delete</span>
+                          </button>
+                       </div>
+                    ) : (
+                       <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-outline-variant/30 rounded-xl cursor-pointer hover:bg-surface-container-high hover:border-primary transition-colors">
+                          <span className="material-symbols-outlined text-outline-variant/50 mb-1 text-3xl">add_photo_alternate</span>
+                          <span className="text-xs text-on-surface-variant font-medium">
+                             {uploadingModuleImage ? "Subiendo..." : "Click para subir imagen"}
+                          </span>
+                          <input type="file" accept="image/*" className="hidden" onChange={handleUploadModuleImage} disabled={uploadingModuleImage} />
+                       </label>
+                    )}
+                 </div>
                  
                  <div className="flex justify-end gap-3">
                     <button onClick={() => setIsModuleModalOpen(false)} className="px-5 py-2.5 font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors">Cancelar</button>
