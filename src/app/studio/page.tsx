@@ -429,7 +429,7 @@ export default function CreatorStudioPage() {
        setModuleInputName("");
        setIsModuleModalOpen(false);
     } else {
-       alert("Error creating module");
+       alert("Error creating module: " + error.message);
     }
   };
 
@@ -471,7 +471,7 @@ export default function CreatorStudioPage() {
         setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Gratis", description: "", price: "", video_url: "", media_url: "" });
         setIsMaterialModalOpen(false);
     } else {
-        alert("Error creating material");
+        alert("Error creating material: " + error.message);
     }
   };
 
@@ -1477,7 +1477,7 @@ export default function CreatorStudioPage() {
            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 py-8 animate-in fade-in">
               <div className="bg-surface-container-lowest w-full max-w-2xl rounded-3xl p-8 shadow-2xl border border-outline-variant/20 max-h-full overflow-y-auto no-scrollbar">
                  <h3 className="text-xl font-bold text-on-surface mb-2">Añadir Nuevo Material</h3>
-                 <p className="text-sm text-on-surface-variant mb-6">Sube un video o un PDF bloqueado interactivo para tu comunidad.</p>
+                 <p className="text-sm text-on-surface-variant mb-6">Sube un video o un PDF interactivo para el módulo <strong className="text-primary">{moduleNames.find(m => m.id === activeModuleId)?.name || "Seleccionado"}</strong>.</p>
                  
                  <div className="flex flex-col gap-5">
                     <div>

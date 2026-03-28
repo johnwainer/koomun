@@ -252,6 +252,30 @@ CREATE POLICY "Authors can create posts." ON public.feed_posts FOR INSERT WITH C
 CREATE POLICY "Authors can update own posts." ON public.feed_posts FOR UPDATE USING (auth.uid() = author_id);
 CREATE POLICY "Authors can delete own posts." ON public.feed_posts FOR DELETE USING (auth.uid() = author_id);
 
+-- Content Modules: Anyone can view, Creators can manage
+CREATE POLICY "Content modules are viewable by everyone." ON public.content_modules FOR SELECT USING (true);
+CREATE POLICY "Creators can manage content modules." ON public.content_modules FOR ALL USING (
+   EXISTS (SELECT 1 FROM public.communities WHERE id = content_modules.community_id AND creator_id = auth.uid())
+) WITH CHECK (
+   EXISTS (SELECT 1 FROM public.communities WHERE id = content_modules.community_id AND creator_id = auth.uid())
+);
+
+-- Content Items: Anyone can view, Creators can manage
+CREATE POLICY "Content items are viewable by everyone." ON public.content_items FOR SELECT USING (true);
+CREATE POLICY "Creators can manage content items." ON public.content_items FOR ALL USING (
+   EXISTS (
+     SELECT 1 FROM public.content_modules cm
+     JOIN public.communities c ON c.id = cm.community_id
+     WHERE cm.id = content_items.module_id AND c.creator_id = auth.uid()
+   )
+) WITH CHECK (
+   EXISTS (
+     SELECT 1 FROM public.content_modules cm
+     JOIN public.communities c ON c.id = cm.community_id
+     WHERE cm.id = content_items.module_id AND c.creator_id = auth.uid()
+   )
+);
+
 -- ==========================================
 -- 4. MASSIVE DEMO DATA GENERATION (PL/pgSQL)
 -- ==========================================
