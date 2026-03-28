@@ -470,8 +470,7 @@ CREATE TABLE public.lesson_notes (
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
   content TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(lesson_id, user_id)
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.lesson_notes ENABLE ROW LEVEL SECURITY;

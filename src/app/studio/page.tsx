@@ -14,6 +14,10 @@ export default function CreatorStudioPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("landing_creador");
   
+  const [dialogState, setDialogState] = useState<{isOpen: boolean, type: 'alert'|'confirm', title: string, message: string, onConfirm?: () => void}>({isOpen: false, type: 'alert', title: '', message: ''});
+  const showAlert = (title: string, message: string) => setDialogState({isOpen: true, type: 'alert', title, message});
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => setDialogState({isOpen: true, type: 'confirm', title, message, onConfirm});
+  
   const [user, setUser] = useState<any>(null);
   const [loadingApp, setLoadingApp] = useState(true);
   const [profileInput, setProfileInput] = useState({ full_name: '', bio: '', avatar_url: '', cover_url: '' });
@@ -59,7 +63,7 @@ export default function CreatorStudioPage() {
          setProfileInput(prev => ({ ...prev, [field]: url }));
       }
     } catch (err: any) {
-      alert("Error subiendo imagen: " + err.message);
+      showAlert("Error", "Error subiendo imagen: " + err.message);
     } finally {
       if (field === 'cover_url') setUploadingCover(false);
       else if (field === 'avatar_url') setUploadingAvatar(false);
@@ -138,7 +142,7 @@ export default function CreatorStudioPage() {
       if (!error) {
          setUser({ ...user, full_name: profileInput.full_name, bio: profileInput.bio, avatar_url: profileInput.avatar_url, cover_url: profileInput.cover_url });
       } else {
-         alert("Error actualizando: " + error.message);
+         showAlert("Error", "Error actualizando: " + error.message);
       }
       setSavingProfile(false);
   };
@@ -178,7 +182,7 @@ export default function CreatorStudioPage() {
       if (!error) {
          setMyCommunities(prev => prev.map(c => c.id === selectedCommunityId ? { ...c, title: communityInput.title, description: communityInput.description, cover_image_url: communityInput.cover_image_url } : c));
       } else {
-         alert("Error actualizando landing: " + error.message);
+         showAlert("Error", "Error actualizando landing: " + error.message);
       }
       setSavingCommunity(false);
   };
@@ -196,7 +200,7 @@ export default function CreatorStudioPage() {
            c.id === commId ? { ...c, is_published: !currentStatus } : c
         ));
      } catch(e: any) {
-        alert("Error cambiando estado: " + e.message);
+        showAlert("Error", "Error cambiando estado: " + e.message);
      }
   };
 
@@ -275,11 +279,16 @@ export default function CreatorStudioPage() {
     }));
   };
 
-  const deleteItem = async (id: string) => {
-    if (!confirm("¿Seguro que deseas eliminar este contenido?")) return;
-    await supabaseClient.from('content_items').delete().eq('id', id);
-    setContentItems(items => items.filter(item => item.id !== id));
-    setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count - 1 } : m));
+  const deleteItem = (id: string) => {
+    showConfirm(
+      "Eliminar Lección",
+      "¿Seguro que deseas eliminar este contenido? Esta acción no se puede deshacer.",
+      async () => {
+        await supabaseClient.from('content_items').delete().eq('id', id);
+        setContentItems(items => items.filter(item => item.id !== id));
+        setModuleNames(prev => prev.map(m => m.id === activeModuleId ? { ...m, count: m.count - 1 } : m));
+      }
+    );
   };
 
   const toggleItemActive = async (id: string, current: boolean) => {
@@ -287,11 +296,16 @@ export default function CreatorStudioPage() {
     setContentItems(contentItems.map(item => item.id === id ? { ...item, is_active: !current } : item));
   };
   
-  const deleteModule = async (id: string) => {
-    if(!confirm("¿Seguro que quieres eliminar este módulo y todo su contenido?")) return;
-    await supabaseClient.from('content_modules').delete().eq('id', id);
-    setModuleNames(moduleNames.filter(m => m.id !== id));
-    if (activeModuleId === id) setActiveModuleId(moduleNames[0]?.id || null);
+  const deleteModule = (id: string) => {
+    showConfirm(
+      "Eliminar Módulo",
+      "¿Seguro que quieres eliminar este módulo y todo su contenido? Esta acción no se puede deshacer.",
+      async () => {
+        await supabaseClient.from('content_modules').delete().eq('id', id);
+        setModuleNames(moduleNames.filter(m => m.id !== id));
+        if (activeModuleId === id) setActiveModuleId(moduleNames[0]?.id || null);
+      }
+    );
   };
   
   const toggleModuleActive = async (id: string, current: boolean) => {
@@ -422,7 +436,7 @@ export default function CreatorStudioPage() {
        const { url } = await res.json();
        setModuleImageUrl(url);
      } catch (err: any) {
-       alert("Error subiendo imagen: " + err.message);
+       showAlert("Error", "Error subiendo imagen: " + err.message);
      } finally {
        setUploadingModuleImage(false);
      }
@@ -450,7 +464,7 @@ export default function CreatorStudioPage() {
        const { url } = await res.json();
        setMaterialInput(prev => ({ ...prev, media_url: url }));
      } catch (err: any) {
-       alert("Error subiendo archivo: " + err.message);
+       showAlert("Error", "Error subiendo archivo: " + err.message);
      } finally {
        setUploadingMaterialFile(false);
      }
@@ -458,7 +472,7 @@ export default function CreatorStudioPage() {
 
   const handleCreateModule = async () => {
     if(!moduleInputName.trim() || !moduleInputDesc.trim() || !moduleImageUrl || !selectedCommunityId) {
-       alert("Por favor completa el título, la descripción y sube la imagen de portada del módulo.");
+       showAlert("Campos Incompletos", "Por favor completa el título, la descripción y sube la imagen de portada del módulo.");
        return;
     }
     
@@ -470,7 +484,7 @@ export default function CreatorStudioPage() {
        }).eq('id', editModuleId);
        if (!error) {
           setModuleNames(moduleNames.map(m => m.id === editModuleId ? { ...m, name: moduleInputName, description: moduleInputDesc, cover_image_url: moduleImageUrl } : m));
-       } else alert("Error al editar módulo");
+       } else showAlert("Error", "Error al editar módulo");
     } else {
        const { data, error } = await supabaseClient.from('content_modules').insert({
           community_id: selectedCommunityId,
@@ -482,7 +496,7 @@ export default function CreatorStudioPage() {
        if (data && !error) {
           setModuleNames([{ id: data.id, name: data.title, count: 0, is_active: data.is_active, description: data.description, cover_image_url: data.cover_image_url }, ...moduleNames]);
           setActiveModuleId(data.id);
-       } else alert("Error creating module");
+       } else showAlert("Error", "Error creating module");
     }
     
     setModuleInputName("");
@@ -518,7 +532,7 @@ export default function CreatorStudioPage() {
               url: materialInput.type === "NATIVE" ? materialInput.media_url : materialInput.video_url,
               access: materialInput.access
           } : item));
-       } else alert("Error al editar lección");
+       } else showAlert("Error", "Error al editar lección");
     } else {
        const { data: insertedItem, error } = await supabaseClient.from('content_items').insert({
           module_id: activeModuleId,
@@ -544,7 +558,7 @@ export default function CreatorStudioPage() {
              is_active: insertedItem.is_active !== false
           }]);
           setModuleNames(moduleNames.map(m => m.id === activeModuleId ? {...m, count: m.count + 1} : m));
-       } else alert("Error creating item");
+       } else showAlert("Error", "Error creating item");
     }
     
     setMaterialInput({ title: "", type: "VIDEO", platform: "youtube", access: "Muestra Gratis", description: "", price: "", video_url: "", media_url: "" });
@@ -1527,6 +1541,33 @@ export default function CreatorStudioPage() {
 
         </div>
         {/* Add Modals Here globally outside layout */}
+        {dialogState.isOpen && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[300] flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
+               <div className="bg-surface-container-lowest w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-outline-variant/20 flex flex-col">
+                  <h3 className="text-xl font-bold text-on-surface mb-2">{dialogState.title}</h3>
+                  <p className="text-sm text-on-surface-variant mb-6 leading-relaxed">{dialogState.message}</p>
+                  <div className="flex justify-end gap-3 mt-auto">
+                     {dialogState.type === 'confirm' && (
+                        <button 
+                           onClick={() => setDialogState({ ...dialogState, isOpen: false, onConfirm: undefined })} 
+                           className="px-5 py-2.5 font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors"
+                        >
+                           Cancelar
+                        </button>
+                     )}
+                     <button 
+                        onClick={() => {
+                           if (dialogState.type === 'confirm' && dialogState.onConfirm) dialogState.onConfirm();
+                           setDialogState({ ...dialogState, isOpen: false, onConfirm: undefined });
+                        }} 
+                        className={`px-5 py-2.5 text-white font-bold rounded-xl shadow-md active:scale-95 transition-all ${dialogState.type === 'confirm' ? 'bg-red-500 hover:bg-red-600' : 'bg-primary hover:bg-primary-container'}`}
+                     >
+                        {dialogState.type === 'confirm' ? 'Continuar' : 'Aceptar'}
+                     </button>
+                  </div>
+               </div>
+            </div>
+         )}
         {isModuleModalOpen && (
            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in">
               <div className="bg-surface-container-lowest w-full max-w-md rounded-3xl p-6 shadow-2xl border border-outline-variant/20">
