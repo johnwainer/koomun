@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseClient, supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
 
     if (!lessonId) return NextResponse.json({ error: "Lección no especificada" }, { status: 400 });
 
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabaseAdmin
       .from('lesson_notes')
       .select('id, content, created_at, updated_at')
       .eq('lesson_id', lessonId)
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     
     if (!content || !content.trim()) return NextResponse.json({ error: "El apunte está vacío" }, { status: 400 });
 
-    const { data, error } = await supabaseClient
+    const { data, error } = await supabaseAdmin
       .from('lesson_notes')
       .insert({
          lesson_id: lessonId,
