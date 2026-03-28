@@ -42,8 +42,12 @@ export default function CommunitySwitcher({ maxWidth = "max-w-7xl", activeId, on
               const data = await res.json();
               if (data.communities && data.communities.length > 0) {
                  setCommunities(data.communities);
-                 if (!activeId) setInternalActiveId(data.communities[0].id);
-                 if (onChange && !activeId) onChange(data.communities[0]);
+                 let selected = activeId ? data.communities.find((c: any) => c.id === activeId) : null;
+                 if (!selected) {
+                    selected = data.communities[0];
+                    setInternalActiveId(selected.id);
+                 }
+                 if (onChange) onChange(selected);
                  if (onLoad) onLoad(data.communities, "success");
               } else {
                  if (onLoad) onLoad([], "empty");
