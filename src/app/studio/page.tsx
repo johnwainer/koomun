@@ -261,6 +261,7 @@ export default function CreatorStudioPage() {
   // Contenidos Reales DB
   const [contentItems, setContentItems] = useState<any[]>([]);
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [draggedModuleIdx, setDraggedModuleIdx] = useState<number | null>(null);
 
   const toggleAccess = async (id: string) => {
     const itemTarget = contentItems.find(i => i.id === id);
@@ -349,6 +350,38 @@ export default function CreatorStudioPage() {
     setDraggedIdx(null);
   };
 
+  const onDragModuleStart = (e: React.DragEvent, idx: number) => {
+    setDraggedModuleIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const onDragModuleEnter = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (draggedModuleIdx === null || draggedModuleIdx === idx) return;
+    
+    const items = [...moduleNames];
+    const draggedItem = items[draggedModuleIdx];
+    items.splice(draggedModuleIdx, 1);
+    items.splice(idx, 0, draggedItem);
+    
+    setDraggedModuleIdx(idx);
+    setModuleNames(items);
+  };
+  
+  const onDropModule = async (e: React.DragEvent) => {
+    e.preventDefault();
+    if (draggedModuleIdx !== null) {
+       const updates = moduleNames.map((it, i) => ({ id: it.id, order_index: i }));
+       const { data: { session } } = await supabaseClient.auth.getSession();
+       await fetch('/api/private/studio/modules/reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ updates })
+       });
+    }
+    setDraggedModuleIdx(null);
+  };
+
   // Modulos Reales DB
   const [moduleNames, setModuleNames] = useState<any[]>([]);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
@@ -363,6 +396,7 @@ export default function CreatorStudioPage() {
            .from('content_modules')
            .select('id, title, description, cover_image_url, order_index, is_active, created_at, content_items(count)')
            .eq('community_id', selectedCommunityId)
+           .order('order_index', { ascending: true })
            .order('created_at', { ascending: false });
            
         if (data) {
@@ -1140,11 +1174,16 @@ export default function CreatorStudioPage() {
 
                      <h3 className="font-bold text-sm uppercase tracking-widest text-on-surface-variant mb-4 pb-4 border-b border-outline-variant/10">Catálogo de Contenido</h3>
                      <ul className="flex flex-col gap-2">
-                        {moduleNames.map((mod) => (
+                        {moduleNames.map((mod, index) => (
                            <li 
   key={mod.id} 
   onClick={() => setActiveModuleId(mod.id)}
-  className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all shadow-sm ${
+  draggable
+  onDragStart={(e) => onDragModuleStart(e, index)}
+  onDragEnter={(e) => onDragModuleEnter(e, index)}
+  onDragOver={(e) => e.preventDefault()}
+  onDragEnd={onDropModule}
+  className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all shadow-sm ${draggedModuleIdx === index ? 'opacity-50' : 'opacity-100'} ${
    activeModuleId === mod.id 
      ? "bg-surface-container text-on-surface font-bold text-sm border-l-4 border-primary hover:shadow-md" 
      : "text-on-surface-variant font-medium hover:bg-surface-container-low text-sm"

@@ -26,6 +26,7 @@ export async function GET(req: Request) {
       .select('id, title, order_index, description, cover_image_url')
       .eq('community_id', communityId)
       .eq('is_active', true)
+      .order('order_index', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (error) throw error;

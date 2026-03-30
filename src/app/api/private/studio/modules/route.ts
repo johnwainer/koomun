@@ -12,6 +12,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { community_id, name, description, cover_image_url, is_active } = body;
 
+    const { data: existing } = await supabaseAdmin.from('content_modules').select('id').eq('community_id', community_id);
+    const count = existing ? existing.length : 0;
+
     const { data, error } = await supabaseAdmin
       .from('content_modules')
       .insert({
@@ -20,7 +23,7 @@ export async function POST(req: Request) {
          cover_image_url: cover_image_url,
          community_id: community_id,
          is_active: is_active !== undefined ? is_active : true,
-         order_index: 0
+         order_index: count
       })
       .select()
       .single();
