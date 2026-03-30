@@ -36,7 +36,8 @@ export default function TrendingPage() {
              bgTrend: index < 2 ? "bg-amber-500/10" : "bg-green-500/10",
              icon: "rocket_launch",
              image: c.cover_image_url || "https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif",
-             creator: c.creator?.avatar_url || "https://i.pravatar.cc/150",
+             creator: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.creator?.id || c.id}`,
+             creatorUsername: c.creator?.username || (c.creator?.id ? `Creador-${c.creator.id}` : ""),
              is_elite: c.creator?.plan === 'elite'
          }));
          setTrendingCommunities(mapped);
@@ -97,7 +98,7 @@ export default function TrendingPage() {
                        {/* Creator Avatar - Out of overflow block */}
                        <div className="absolute bottom-0 left-6 translate-y-1/2 z-20">
                           <div 
-                             onClick={(e) => { e.stopPropagation(); router.push(`/creator/Creador-${community.rank}`); }}
+                             onClick={(e) => { e.stopPropagation(); router.push(`/creator/${community.creatorUsername}`); }}
                              className={`relative w-16 h-16 rounded-full border-[4px] bg-surface-container overflow-hidden shadow-xl cursor-pointer hover:scale-105 transition-transform ${community.rank % 2 === 0 ? 'border-zinc-900' : 'border-surface-container-lowest'}`}
                           >
                              <img src={community.creator} alt="Creator" className="w-full h-full object-cover" />
@@ -150,7 +151,7 @@ export default function TrendingPage() {
                      #{community.rank}
                    </div>
                    <div 
-                      onClick={(e) => { e.stopPropagation(); router.push(`/creator/Creador-${community.rank}`); }}
+                      onClick={(e) => { e.stopPropagation(); router.push(`/creator/${community.creatorUsername}`); }}
                       className="relative shrink-0 transition-transform cursor-pointer hover:scale-105"
                    >
                       <div className={`w-14 h-14 rounded-full overflow-hidden bg-surface-container border shadow-sm ${community.rank % 2 === 0 ? 'border-[3px] border-zinc-900' : 'border border-outline-variant/20'}`}>

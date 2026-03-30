@@ -65,8 +65,8 @@ export default function DiscoverPage() {
             members: c.members?.[0]?.count ? c.members[0].count.toString() : "0", 
             price: c.price_tier,
             image: c.cover_image_url || `https://picsum.photos/seed/${c.id}/400/250`,
-            creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.id}`,
-            creatorUsername: c.creator?.username || `Creador-${c.id}`,
+            creatorAvatar: c.creator?.avatar_url || `https://i.pravatar.cc/150?u=${c.creator?.id || c.id}`,
+            creatorUsername: c.creator?.username || (c.creator?.id ? `Creador-${c.creator.id}` : ""),
             isElite: c.creator?.plan === 'elite'
           }));
           setMockCommunities(mapped);

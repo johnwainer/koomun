@@ -1188,7 +1188,10 @@ export default function CreatorStudioPage() {
      : "text-on-surface-variant font-medium hover:bg-surface-container-low text-sm"
    }`}
 >
-  <div className="flex-1 truncate pr-2">{mod.name}</div>
+  <div className="flex items-center gap-2 flex-1 truncate pr-2">
+     <span className="material-symbols-outlined text-outline-variant/50 drag-handle cursor-grab active:cursor-grabbing shrink-0 text-[18px]">drag_indicator</span>
+     <span className="truncate">{mod.name}</span>
+  </div>
   <div className="flex items-center gap-1 sm:gap-2">
       <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full ${activeModuleId === mod.id ? 'bg-surface text-on-surface-variant' : 'bg-surface-container'}`}>
          {mod.count} ítems
