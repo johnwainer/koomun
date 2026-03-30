@@ -29,7 +29,7 @@ export default function TrendingPage() {
              rank: index + 1,
              name: c.title,
              id: c.id,
-             desc: c.description || 'Sin descripción',
+             desc: c.description ? c.description.split("||--FEATURES--||")[0] : 'Sin descripción',
              growth: "+0%", // proxy
              members: c.members[0]?.count || "0",
              trendColor: index < 2 ? "text-amber-500" : "text-green-500",

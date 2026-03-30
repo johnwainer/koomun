@@ -756,20 +756,19 @@ export default function CreatorStudioPage() {
                                     <span className="material-symbols-outlined text-[14px]">{(comm as any).is_published ? 'public' : 'visibility_off'}</span>
                                     {comm.is_published ? 'Publicada' : 'Borrador'}
                                  </button>
-                                 
-                                 <div className="absolute -bottom-8 left-6 z-20 w-16 h-16 rounded-full border-4 border-surface-container-lowest bg-surface-container flex items-center justify-center overflow-hidden shadow-lg">
+                              </div>
+                              
+                              <div className="p-6 pt-10 flex flex-col flex-1 relative z-10 bg-surface-container-lowest">
+                                 <div className="absolute -top-8 left-6 z-20 w-16 h-16 rounded-full border-4 border-surface-container-lowest bg-surface-container flex items-center justify-center overflow-hidden shadow-lg">
                                     {profileInput.avatar_url ? (
                                        <img src={profileInput.avatar_url} alt="Tu Avatar" className="w-full h-full object-cover" />
                                     ) : (
                                        <span className="text-xl font-bold uppercase">{profileInput.full_name?.charAt(0) || "C"}</span>
                                     )}
                                  </div>
-                              </div>
-                              
-                              <div className="p-6 pt-10 flex flex-col flex-1 relative z-10 bg-surface-container-lowest">
                                  <h3 className="font-extrabold text-xl text-on-surface mb-2 leading-tight">{comm.title || 'Sin Título'}</h3>
-                                 <p className="text-on-surface-variant text-sm mb-6 flex-1">
-                                    {comm.description || '(Sin descripción editada todavía)'}
+                                 <p className="text-on-surface-variant text-sm mb-6 flex-1 text-balance">
+                                    {comm.description ? comm.description.split(MAGIC_DELIMITER)[0] : '(Sin descripción editada todavía)'}
                                  </p>
                                  
                                  <div className="flex items-center justify-between mb-6 pb-6 border-b border-outline-variant/10">

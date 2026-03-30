@@ -60,7 +60,7 @@ export default function DiscoverPage() {
           const mapped = commData.communities.map((c: any) => ({
             id: c.id,
             title: c.title,
-            description: c.description || "",
+            description: c.description ? c.description.split("||--FEATURES--||")[0] : "",
             category: c.category?.name || "Varia",
             members: c.members?.[0]?.count ? c.members[0].count.toString() : "0", 
             price: c.price_tier,
